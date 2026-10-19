@@ -2,7 +2,15 @@
 
 # ---------- Build output ----------
 win32/bin/
+win32/**/bin/
+win32/**/obj/
+web/dist/
+web/coverage/
+node_modules/
+*.tsbuildinfo
+dist-release/
 *.tmp
+npm-debug.log*
 
 # ---------- AI agent context (never commit) ----------
 # Settings, transcripts, memory, plans and launch configs of coding agents.

@@ -2,16 +2,16 @@
 
 Персональный трекер задач: матрица Эйзенхауэра, Kanban-доска, Pomodoro-таймер и рабочее пространство с заметками и секретами. Задачи едины для всех вкладок. У каждой задачи есть детали: описание, чек-лист и ссылки.
 
-Реализовано по двум ТЗ: [базовому](../task_manager_description.md) и [расширению 02](feature_document_02.md). Есть две равноценные версии.
+Реализовано по двум ТЗ: [базовому](../docs/specs/task_manager_description.md) и [расширению 02](../docs/specs/feature_document_02.md). Идёт переход на гибридную архитектуру (см. [фазу 0](../docs/phase-0.md)): веб становится основной кодовой базой, а это приложение — оболочкой на WebView2. Последняя версия с полным WPF-интерфейсом отмечена тегом `wpf-legacy`.
 
-## Веб-версия — `index.html`
+## Прежняя веб-версия — `web/legacy/index.html`
 
-Один файл без зависимостей. Откройте его двойным щелчком в любом браузере.
+Один файл без зависимостей. Откройте его двойным щелчком в любом браузере. Новая веб-версия собирается в папке `web/` (шаг 0.2).
 
-Чтобы открыть его в отдельном окне Edge, как программу, дважды щёлкните `open-web.cmd` или выполните в PowerShell:
+Чтобы открыть его в отдельном окне Edge, как программу, дважды щёлкните `web\legacy\open-web.cmd` или выполните в PowerShell:
 
 ```bash
-Start-Process msedge "--app=file:///C:/projects/TaskManager/win32/index.html"
+Start-Process msedge "--app=file:///C:/projects/TaskManager/web/legacy/index.html"
 ```
 
 Данные хранятся в `localStorage` браузера: `taskTracker.tasks`, `taskTracker.settings`, `taskTracker.notes`, `taskTracker.secrets`. В другом браузере список будет свой.
