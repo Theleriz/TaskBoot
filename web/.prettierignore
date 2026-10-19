@@ -1,0 +1,4 @@
+dist
+coverage
+legacy
+package-lock.json

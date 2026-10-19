@@ -1,0 +1,73 @@
+/* Design tokens (N-08). Copied from web/legacy/index.html so both versions share one palette.
+   Phase 0.4 replaces the fixed palette with the generated theme (background + accent). */
+
+:root {
+  --bg: #f3f4f6;
+  --surface: #ffffff;
+  --surface-2: #f0f1f4;
+  --card: #f8f9fb;
+  --card-hover: #eef0f5;
+  --border: #e1e4ea;
+  --border-strong: #c3c8d2;
+  --text: #1a1d23;
+  --muted: #6a7080;
+  --hover: #e8eaef;
+  --accent: #3b5bdb;
+  --accent-hover: #3049b8;
+  --accent-soft: #e8edfd;
+  --on-accent: #ffffff;
+  --work: #e03131;
+  --work-hover: #c42727;
+  --work-soft: #fdeeee;
+  --rest: #2b8a3e;
+  --rest-hover: #237032;
+  --rest-soft: #eaf6ec;
+  --idle-soft: #eceef1;
+  --danger: #d9363e;
+  --danger-soft: #fcebec;
+  --warn-bg: #fff4dc;
+  --warn-text: #7a5200;
+  --q1: #e03131;
+  --q2: #3b5bdb;
+  --q3: #e8890c;
+  --q4: #8a919c;
+  --overlay: rgba(15, 18, 25, 0.35);
+  --shadow: 0 12px 40px rgba(16, 24, 40, 0.18);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #15171b;
+    --surface: #1e2126;
+    --surface-2: #272b31;
+    --card: #252930;
+    --card-hover: #2d323a;
+    --border: #33373f;
+    --border-strong: #4a505b;
+    --text: #e7e9ec;
+    --muted: #9aa1ac;
+    --hover: #2b2f37;
+    --accent: #7d93f2;
+    --accent-hover: #93a6f5;
+    --accent-soft: #252c47;
+    --on-accent: #11131a;
+    --work: #f06262;
+    --work-hover: #f37b7b;
+    --work-soft: #3a2326;
+    --rest: #4cc06a;
+    --rest-hover: #63cc7e;
+    --rest-soft: #1d3325;
+    --idle-soft: #2a2e35;
+    --danger: #f06262;
+    --danger-soft: #3a2326;
+    --warn-bg: #3a3020;
+    --warn-text: #f2c66d;
+    --q1: #f06262;
+    --q2: #7d93f2;
+    --q3: #f2a93b;
+    --q4: #8a919c;
+    --overlay: rgba(0, 0, 0, 0.5);
+    --shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+    color-scheme: dark;
+  }
+}

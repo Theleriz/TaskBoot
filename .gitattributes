@@ -3,6 +3,12 @@
 *.ps1 text eol=crlf
 
 *.cs text
+*.ts text
+*.tsx text
+*.js text
+*.json text
+*.css text
+*.svg text
 *.html text
 *.md text
 *.manifest text

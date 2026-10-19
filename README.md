@@ -8,7 +8,7 @@ The project is moving to a hybrid architecture: the web app is the primary codeb
 
 | Path | Contents |
 |---|---|
-| `web/` | Web app, the primary codebase. The new build (Vite + React + TypeScript) arrives in phase 0.2. |
+| `web/` | Web app, the primary codebase: Vite + React + TypeScript. Commands: [web/README.md](web/README.md). |
 | `web/legacy/` | Previous single-file web version (`index.html`), kept until the new web app reaches parity. |
 | `win32/` | Windows app. Currently the standalone WPF version; becomes the WebView2 shell in phase 0.5. Build instructions: [win32/README.md](win32/README.md). |
 | `docs/specs/` | Product specs (in Russian). |
@@ -19,6 +19,7 @@ The tag `wpf-legacy` marks the last commit with the full standalone WPF interfac
 ## Quick start
 
 - **Windows app (current WPF version):** run `win32\build.cmd`, then `win32\bin\TaskTracker.exe`.
+- **Web app (new, in progress):** `cd web`, `npm ci`, `npm run dev`.
 - **Previous web version:** open `web/legacy/index.html` in a browser.
 
 ## Rules
