@@ -1,0 +1,1630 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Task Tracker</title>
+<style>
+:root {
+  --bg: #f3f4f6;
+  --surface: #ffffff;
+  --surface-2: #f0f1f4;
+  --card: #f8f9fb;
+  --card-hover: #eef0f5;
+  --border: #e1e4ea;
+  --border-strong: #c3c8d2;
+  --text: #1a1d23;
+  --muted: #6a7080;
+  --hover: #e8eaef;
+  --accent: #3b5bdb;
+  --accent-hover: #3049b8;
+  --accent-soft: #e8edfd;
+  --on-accent: #ffffff;
+  --work: #e03131;
+  --work-hover: #c42727;
+  --work-soft: #fdeeee;
+  --rest: #2b8a3e;
+  --rest-hover: #237032;
+  --rest-soft: #eaf6ec;
+  --idle-soft: #eceef1;
+  --danger: #d9363e;
+  --danger-soft: #fcebec;
+  --warn-bg: #fff4dc;
+  --warn-text: #7a5200;
+  --q1: #e03131;
+  --q2: #3b5bdb;
+  --q3: #e8890c;
+  --q4: #8a919c;
+  --overlay: rgba(15, 18, 25, .35);
+  --shadow: 0 12px 40px rgba(16, 24, 40, .18);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #15171b;
+    --surface: #1e2126;
+    --surface-2: #272b31;
+    --card: #252930;
+    --card-hover: #2d323a;
+    --border: #33373f;
+    --border-strong: #4a505b;
+    --text: #e7e9ec;
+    --muted: #9aa1ac;
+    --hover: #2b2f37;
+    --accent: #7d93f2;
+    --accent-hover: #93a6f5;
+    --accent-soft: #252c47;
+    --on-accent: #11131a;
+    --work: #f06262;
+    --work-hover: #f37b7b;
+    --work-soft: #3a2326;
+    --rest: #4cc06a;
+    --rest-hover: #63cc7e;
+    --rest-soft: #1d3325;
+    --idle-soft: #2a2e35;
+    --danger: #f06262;
+    --danger-soft: #3a2326;
+    --warn-bg: #3a3020;
+    --warn-text: #f2c66d;
+    --q1: #f06262;
+    --q2: #7d93f2;
+    --q3: #f2a93b;
+    --q4: #8a919c;
+    --overlay: rgba(0, 0, 0, .5);
+    --shadow: 0 12px 40px rgba(0, 0, 0, .5);
+    color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.45 "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+}
+button, input, textarea, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+h1, h2, h3, h4 { margin: 0; }
+.muted { color: var(--muted); }
+.icon { width: 16px; height: 16px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---------- Шапка ---------- */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.tabs { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  padding: 7px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .12s, color .12s;
+}
+.tab:hover { background: var(--hover); color: var(--text); }
+.tab[aria-selected="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.tab[aria-selected="true"]:hover { opacity: .85; }
+
+.widget {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  border: 0;
+  border-radius: 16px;
+  padding: 6px 14px 7px 12px;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--idle-soft);
+  color: var(--muted);
+  transition: opacity .12s;
+}
+.widget:hover { opacity: .8; }
+.widget.work { background: var(--work-soft); color: var(--work); }
+.widget.rest { background: var(--rest-soft); color: var(--rest); }
+.w-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.widget.running .w-dot { animation: pulse 1.6s ease-in-out infinite; }
+.w-label { font-weight: 500; }
+.w-time { font-variant-numeric: tabular-nums; min-width: 42px; text-align: left; }
+@keyframes pulse { 50% { opacity: .25; } }
+
+/* ---------- Общие элементы управления ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  padding: 7px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .12s, border-color .12s, opacity .12s;
+}
+.btn:not(:disabled):hover { background: var(--hover); }
+.btn:disabled { opacity: .4; cursor: default; }
+.btn.small { padding: 4px 10px; font-size: 13px; }
+.btn.primary { background: var(--accent); border-color: transparent; color: var(--on-accent); font-weight: 600; }
+.btn.primary:not(:disabled):hover { background: var(--accent-hover); }
+.btn.work { background: var(--work); border-color: transparent; color: var(--on-accent); font-weight: 600; }
+.btn.work:not(:disabled):hover { background: var(--work-hover); }
+.btn.rest { background: var(--rest); border-color: transparent; color: var(--on-accent); font-weight: 600; }
+.btn.rest:not(:disabled):hover { background: var(--rest-hover); }
+.btn.danger-ghost { background: transparent; border-color: transparent; color: var(--danger); }
+.btn.danger-ghost:not(:disabled):hover { background: var(--danger-soft); }
+
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background .12s, color .12s;
+}
+.icon-btn:hover { background: var(--hover); color: var(--text); }
+.icon-btn.danger:hover { background: var(--danger-soft); color: var(--danger); }
+
+.input, .textarea, .select {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 10px;
+  transition: border-color .12s;
+}
+.input:hover, .textarea:hover, .select:hover { border-color: var(--border-strong); }
+.input:focus, .textarea:focus, .select:focus { border-color: var(--accent); outline: none; }
+.input.invalid { border-color: var(--danger); }
+.textarea { resize: vertical; min-height: 84px; line-height: 1.5; }
+.select { cursor: pointer; }
+.field-error { color: var(--danger); font-size: 12px; margin-top: 4px; }
+.hint { margin: 6px 2px 0; font-size: 12px; color: var(--muted); }
+.empty {
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  padding: 18px 12px;
+  text-align: center;
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* ---------- Раскладка ---------- */
+main { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 0 16px 16px; }
+.view { flex: 1; min-height: 0; }
+.view.scroll { overflow: auto; margin: 0 -16px; padding: 0 16px; }
+.addbar { padding: 14px 0 8px; }
+.addbar form { display: flex; gap: 8px; }
+
+/* ---------- Доски ---------- */
+.board { display: grid; gap: 12px; height: 100%; }
+.matrix { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+.kanban { grid-template-columns: repeat(3, 1fr); }
+.zone {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 6px 6px 12px;
+  transition: background .12s, border-color .12s;
+}
+.zone.over { background: var(--accent-soft); border-color: var(--accent); }
+.zone-head { display: flex; align-items: center; gap: 9px; margin: 0 6px 10px 2px; }
+.zone-head h2 { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stripe { width: 4px; height: 16px; border-radius: 2px; flex: none; }
+.count {
+  min-width: 24px;
+  padding: 1px 8px 2px;
+  border-radius: 9px;
+  background: var(--surface-2);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+.zone-list { flex: 1; min-height: 0; overflow: auto; padding-right: 6px; }
+
+.card {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 6px 9px 12px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  user-select: none;
+  transition: background .12s, border-color .12s, opacity .12s;
+}
+.card:hover { background: var(--card-hover); border-color: var(--border-strong); }
+.card:active { cursor: grabbing; }
+.card.dragging { opacity: .45; }
+.card-body { flex: 1; min-width: 0; }
+.card-title { overflow-wrap: anywhere; }
+.card.is-done .card-title { text-decoration: line-through; color: var(--muted); }
+.card-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin-top: 5px; font-size: 12px; color: var(--muted); }
+.badge, .ind { display: inline-flex; align-items: center; gap: 5px; }
+.ind { gap: 3px; font-variant-numeric: tabular-nums; }
+.ind .icon { width: 13px; height: 13px; }
+.ind.complete { color: var(--rest); }
+.dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+.card .card-del { opacity: .55; margin-top: -3px; }
+.card:hover .card-del, .card-del:focus-visible { opacity: 1; }
+
+/* ---------- Pomodoro ---------- */
+.timers { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 980px; margin: 18px auto 0; }
+.timer {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  padding: 22px 28px 24px;
+  transition: background .2s, border-color .2s;
+}
+.timer.active.work { border-color: var(--work); background: var(--work-soft); }
+.timer.active.rest { border-color: var(--rest); background: var(--rest-soft); }
+.t-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.t-head h2 { font-size: 20px; font-weight: 600; }
+.t-state { padding: 3px 10px 4px; border-radius: 10px; background: var(--idle-soft); color: var(--muted); font-size: 12px; font-weight: 600; }
+.timer.active.work .t-state { background: var(--work); color: var(--on-accent); }
+.timer.active.rest .t-state { background: var(--rest); color: var(--on-accent); }
+.t-time {
+  margin: 12px 0 14px;
+  text-align: center;
+  font: 300 76px/1.1 "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+.t-bar { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+.t-bar i { display: block; height: 100%; width: 0; border-radius: 3px; }
+.timer.work .t-bar i { background: var(--work); }
+.timer.rest .t-bar i { background: var(--rest); }
+.t-buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 20px; }
+.t-buttons .btn { padding: 9px 10px; }
+.t-duration {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.t-duration small { display: block; color: var(--muted); font-size: 12px; }
+.t-duration .input { width: 84px; text-align: center; }
+.timers-note { max-width: 980px; margin: 12px auto 16px; padding: 0 8px; color: var(--muted); font-size: 13px; }
+
+/* ---------- Пространство ---------- */
+.space { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 1200px; margin: 18px auto 16px; align-items: start; }
+.box { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; min-width: 0; }
+.box-head { display: flex; align-items: center; gap: 9px; margin-bottom: 12px; }
+.box-head h2 { font-size: 17px; font-weight: 600; }
+.warning { margin: -4px 0 12px; padding: 8px 12px; border-radius: 8px; background: var(--warn-bg); color: var(--warn-text); font-size: 13px; }
+.stack { display: grid; gap: 8px; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.create { padding-bottom: 14px; margin-bottom: 14px; border-bottom: 1px solid var(--border); }
+.list { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+
+.note-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 12px;
+  width: 100%;
+  text-align: left;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 12px;
+  cursor: pointer;
+  transition: background .12s, border-color .12s;
+}
+.note-row:hover { background: var(--card-hover); border-color: var(--border-strong); }
+.note-title { font-weight: 600; overflow-wrap: anywhere; }
+.note-date { color: var(--muted); font-size: 12px; white-space: nowrap; }
+.note-preview { grid-column: 1 / -1; color: var(--muted); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.note-edit { display: grid; gap: 8px; background: var(--card); border: 1px solid var(--accent); border-radius: 8px; padding: 10px; }
+.note-edit .textarea { min-height: 140px; }
+
+.secret {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 8px 8px 12px;
+  transition: border-color .12s;
+}
+.secret:hover { border-color: var(--border-strong); }
+.secret-main { flex: 1; min-width: 0; }
+.secret-name { font-weight: 600; overflow-wrap: anywhere; }
+.secret-value { display: block; font: 13px/1.4 "Cascadia Mono", Consolas, ui-monospace, monospace; color: var(--muted); overflow-wrap: anywhere; }
+.secret-value.masked { letter-spacing: 1px; }
+.secret-actions { display: flex; align-items: center; gap: 2px; flex: none; }
+.secret-edit { display: grid; gap: 8px; background: var(--card); border: 1px solid var(--accent); border-radius: 8px; padding: 10px; }
+
+/* ---------- Панель деталей задачи ---------- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: flex-end;
+  background: var(--overlay);
+  opacity: 0;
+  transition: opacity .15s;
+}
+.overlay.open { opacity: 1; }
+.panel {
+  display: flex;
+  flex-direction: column;
+  width: min(540px, 100%);
+  height: 100%;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  transform: translateX(24px);
+  transition: transform .15s;
+  outline: none;
+}
+.overlay.open .panel { transform: none; }
+.panel-head { display: flex; align-items: flex-start; gap: 8px; padding: 16px 16px 12px 20px; border-bottom: 1px solid var(--border); }
+.panel-head .grow { flex: 1; min-width: 0; }
+.panel-title {
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  padding: 4px 8px;
+  margin-left: -9px;
+  font-size: 19px;
+  font-weight: 600;
+  transition: border-color .12s, background .12s;
+}
+.panel-title:hover { border-color: var(--border); }
+.panel-title:focus { border-color: var(--accent); background: var(--surface); outline: none; }
+.panel-body { flex: 1; overflow: auto; }
+.pane-sec { padding: 16px 20px; border-bottom: 1px solid var(--border); }
+.pane-sec:last-child { border-bottom: 0; }
+.sec-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.sec-head h3 { font-size: 14px; font-weight: 600; }
+.selects { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.selects label { display: grid; gap: 4px; font-size: 12px; color: var(--muted); }
+.selects .select { font-size: 14px; color: var(--text); }
+.progress { height: 4px; border-radius: 2px; background: var(--surface-2); overflow: hidden; margin: -2px 0 10px; }
+.progress i { display: block; height: 100%; background: var(--rest); transition: width .2s; }
+.check-item, .link-item { display: flex; align-items: center; gap: 6px; padding: 2px 0; }
+.check-item input[type="checkbox"] { width: 16px; height: 16px; margin: 0 4px; accent-color: var(--accent); cursor: pointer; flex: none; }
+.inline-input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  padding: 4px 6px;
+  transition: border-color .12s;
+}
+.inline-input:hover { border-color: var(--border); }
+.inline-input:focus { border-color: var(--accent); background: var(--surface); outline: none; }
+.inline-input.is-done { text-decoration: line-through; color: var(--muted); }
+.inline-form { display: flex; gap: 8px; margin-top: 8px; }
+.link-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  color: inherit;
+  text-decoration: none;
+  transition: background .12s;
+}
+.link-main:hover { background: var(--hover); }
+.link-main .icon { color: var(--accent); }
+.link-text { min-width: 0; display: grid; }
+.link-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.link-url { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--muted); }
+.link-form { display: grid; gap: 8px; margin-top: 8px; }
+.link-form .row .input { flex: 1 1 180px; width: auto; }
+.panel-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 20px; border-top: 1px solid var(--border); font-size: 12px; }
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  z-index: 20;
+  transform: translate(-50%, 12px);
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: var(--text);
+  color: var(--bg);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .15s, transform .15s;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* ---------- Узкий экран (N-07, N-26) ---------- */
+@media (max-width: 720px) {
+  html, body { height: auto; }
+  body { min-height: 100vh; }
+  .view { flex: none; }
+  .view.scroll { overflow: visible; }
+  .board, .matrix, .kanban { height: auto; grid-template-columns: 1fr; grid-template-rows: none; }
+  .zone { min-height: 110px; }
+  .zone-list { overflow: visible; }
+  .timers, .space { grid-template-columns: 1fr; }
+  .t-time { font-size: 60px; }
+  .w-label { display: none; }
+  .tab { padding: 6px 10px; }
+  .panel { width: 100%; }
+  .selects { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <nav class="tabs" role="tablist" aria-label="Разделы">
+    <button class="tab" role="tab" data-tab="matrix">Эйзенхауэр</button>
+    <button class="tab" role="tab" data-tab="kanban">Канбан</button>
+    <button class="tab" role="tab" data-tab="pomodoro">Pomodoro</button>
+    <button class="tab" role="tab" data-tab="space">Пространство</button>
+  </nav>
+  <button class="widget" id="widget" type="button" title="Открыть Pomodoro">
+    <span class="w-dot"></span><span class="w-label" id="wLabel">Pomodoro</span><span class="w-time" id="wTime">—</span>
+  </button>
+</header>
+
+<main>
+  <section class="addbar" id="addbar">
+    <form id="addForm" novalidate>
+      <input class="input" id="addInput" placeholder="Новая задача…" maxlength="200" autocomplete="off" aria-label="Заголовок новой задачи">
+      <button class="btn primary" type="submit">Добавить</button>
+    </form>
+    <div class="field-error" id="addError" hidden>Введите заголовок задачи</div>
+    <p class="hint" id="addHint">Щелчок по карточке открывает детали. Карточки можно перетаскивать между зонами.</p>
+  </section>
+
+  <section class="view" id="view-matrix" role="tabpanel"><div class="board matrix" id="matrix" data-field="quadrant"></div></section>
+  <section class="view" id="view-kanban" role="tabpanel"><div class="board kanban" id="kanban" data-field="status"></div></section>
+
+  <section class="view scroll" id="view-pomodoro" role="tabpanel">
+    <div class="timers">
+      <article class="timer work" id="timer-work"></article>
+      <article class="timer rest" id="timer-rest"></article>
+    </div>
+    <p class="timers-note">Когда заканчивается работа, автоматически начинается отдых, и наоборот.</p>
+    <p class="timers-note" id="notifyHint" hidden></p>
+  </section>
+
+  <section class="view scroll" id="view-space" role="tabpanel">
+    <div class="space">
+      <section class="box" aria-labelledby="notesHead">
+        <div class="box-head"><span class="stripe" style="background: var(--accent)"></span><h2 id="notesHead">Заметки</h2><span class="count" id="notesCount">0</span></div>
+        <form class="create stack" id="noteForm" novalidate>
+          <input class="input" id="noteTitle" placeholder="Заголовок заметки" maxlength="200" autocomplete="off">
+          <textarea class="textarea" id="noteText" placeholder="Текст заметки"></textarea>
+          <div class="field-error" id="noteError" hidden>Введите заголовок заметки</div>
+          <div><button class="btn primary" type="submit">Добавить заметку</button></div>
+        </form>
+        <div class="list" id="notesList"></div>
+      </section>
+
+      <section class="box" aria-labelledby="secretsHead">
+        <div class="box-head"><span class="stripe" style="background: var(--q3)"></span><h2 id="secretsHead">Секреты</h2><span class="count" id="secretsCount">0</span></div>
+        <p class="warning">Значения хранятся в браузере (localStorage) в открытом виде, без шифрования. Это не менеджер паролей: не храните здесь ничего критичного.</p>
+        <form class="create stack" id="secretForm" novalidate>
+          <input class="input" id="secretName" placeholder="Название, например «API-токен GitHub»" maxlength="200" autocomplete="off">
+          <input class="input" id="secretValue" type="password" placeholder="Значение" autocomplete="new-password" spellcheck="false">
+          <div class="field-error" id="secretError" hidden>Заполните название и значение</div>
+          <div><button class="btn primary" type="submit">Добавить секрет</button></div>
+        </form>
+        <ul class="list" id="secretsList"></ul>
+      </section>
+    </div>
+  </section>
+</main>
+
+<div class="overlay" id="overlay" hidden>
+  <aside class="panel" id="panel" role="dialog" aria-modal="true" aria-label="Детали задачи" tabindex="-1"></aside>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+
+/* ================= Данные ================= */
+
+const KEYS = {
+  tasks: 'taskTracker.tasks',
+  settings: 'taskTracker.settings',
+  notes: 'taskTracker.notes',
+  secrets: 'taskTracker.secrets',
+  tab: 'taskTracker.tab'
+};
+
+const QUADRANTS = [
+  { key: 'q1', title: 'Важно · Срочно', color: 'var(--q1)' },
+  { key: 'q2', title: 'Важно · Не срочно', color: 'var(--q2)' },
+  { key: 'q3', title: 'Не важно · Срочно', color: 'var(--q3)' },
+  { key: 'q4', title: 'Не важно · Не срочно', color: 'var(--q4)' }
+];
+const STAGES = [
+  { key: 'todo', title: 'TODO', color: 'var(--muted)' },
+  { key: 'doing', title: 'В работе', color: 'var(--accent)' },
+  { key: 'done', title: 'Готово', color: 'var(--rest)' }
+];
+const LIMITS = { work: 180, rest: 60 };
+
+const uid = () => (window.crypto && crypto.randomUUID)
+  ? crypto.randomUUID()
+  : Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+const str = v => (typeof v === 'string' ? v : '');
+const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
+
+function read(key, fallback) {
+  let raw;
+  try { raw = localStorage.getItem(key); } catch (e) { return fallback; }
+  if (raw == null) return fallback;
+  try {
+    return JSON.parse(raw);
+  } catch (e) {
+    // Повреждённые данные не затираем молча: откладываем копию.
+    try { localStorage.setItem(key + '.corrupt', raw); } catch (e2) { /* нет места — ничего не поделать */ }
+    return fallback;
+  }
+}
+
+let storageWarned = false;
+function write(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (e) {
+    if (!storageWarned) {
+      storageWarned = true;
+      toast('Не удалось сохранить: хранилище браузера недоступно или переполнено');
+    }
+  }
+}
+
+// N-23: недостающие поля старых задач инициализируются пустыми значениями.
+function normalizeTask(t) {
+  if (!t || typeof t !== 'object') return null;
+  const title = str(t.title).trim();
+  if (!title) return null;
+  return Object.assign({}, t, {
+    id: str(t.id) || uid(),
+    title,
+    quadrant: QUADRANTS.some(q => q.key === t.quadrant) ? t.quadrant : 'q2',
+    status: STAGES.some(s => s.key === t.status) ? t.status : 'todo',
+    createdAt: Number.isFinite(t.createdAt) ? t.createdAt : Date.now(),
+    description: str(t.description),
+    checklist: (Array.isArray(t.checklist) ? t.checklist : [])
+      .filter(i => i && str(i.text).trim())
+      .map(i => ({ id: str(i.id) || uid(), text: str(i.text).trim(), done: !!i.done })),
+    links: (Array.isArray(t.links) ? t.links : [])
+      .map(l => l && normalizeUrl(str(l.url)) ? { id: str(l.id) || uid(), url: normalizeUrl(str(l.url)), label: str(l.label).trim() } : null)
+      .filter(Boolean)
+  });
+}
+
+function loadTasks() {
+  const raw = read(KEYS.tasks, []);
+  return (Array.isArray(raw) ? raw : []).map(normalizeTask).filter(Boolean);
+}
+function loadSettings() {
+  const raw = read(KEYS.settings, {}) || {};
+  const pick = (v, max, def) => Number.isInteger(v) && v > 0 ? clamp(v, 1, max) : def;
+  return { workMinutes: pick(raw.workMinutes, LIMITS.work, 45), restMinutes: pick(raw.restMinutes, LIMITS.rest, 15) };
+}
+function loadNotes() {
+  const raw = read(KEYS.notes, []);
+  return (Array.isArray(raw) ? raw : [])
+    .filter(n => n && str(n.title).trim())
+    .map(n => ({
+      id: str(n.id) || uid(),
+      title: str(n.title).trim(),
+      text: str(n.text),
+      createdAt: Number.isFinite(n.createdAt) ? n.createdAt : Date.now(),
+      updatedAt: Number.isFinite(n.updatedAt) ? n.updatedAt : Date.now()
+    }));
+}
+function loadSecrets() {
+  const raw = read(KEYS.secrets, []);
+  return (Array.isArray(raw) ? raw : [])
+    .filter(s => s && str(s.name).trim())
+    .map(s => ({ id: str(s.id) || uid(), name: str(s.name).trim(), value: str(s.value), createdAt: Number.isFinite(s.createdAt) ? s.createdAt : Date.now() }));
+}
+
+const state = {
+  tasks: loadTasks(),
+  settings: loadSettings(),
+  notes: loadNotes(),
+  secrets: loadSecrets()
+};
+
+/* ================= Утилиты DOM ================= */
+
+const $ = sel => document.querySelector(sel);
+
+function h(tag, props, ...children) {
+  const el = document.createElement(tag);
+  if (props) {
+    for (const [k, v] of Object.entries(props)) {
+      if (v == null || v === false) continue;
+      if (k === 'class') el.className = v;
+      else if (k === 'text') el.textContent = v;
+      else if (k === 'dataset') Object.assign(el.dataset, v);
+      else if (k === 'style') el.style.cssText = v;
+      else if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
+      else if (typeof v === 'boolean') el[k] = v;
+      else el.setAttribute(k, v);
+    }
+  }
+  for (const c of children.flat()) {
+    if (c == null || c === false) continue;
+    el.append(c.nodeType ? c : String(c));
+  }
+  return el;
+}
+
+const ICONS = {
+  x: '<path d="M6 6l12 12M18 6L6 18"/>',
+  text: '<path d="M5 7h14M5 12h14M5 17h9"/>',
+  check: '<path d="M4 12.5l5 5L20 6.5"/>',
+  link: '<path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1"/><path d="M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1"/>',
+  edit: '<path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/>',
+  copy: '<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/>',
+  external: '<path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>'
+};
+function icon(name) {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('class', 'icon');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.innerHTML = ICONS[name];
+  return svg;
+}
+function iconBtn(name, label, onClick, extra) {
+  return h('button', { class: 'icon-btn' + (extra ? ' ' + extra : ''), type: 'button', title: label, 'aria-label': label, onclick: onClick }, icon(name));
+}
+
+let toastTimer = 0;
+function toast(text) {
+  const el = $('#toast');
+  el.textContent = text;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+function fmtDate(ts) {
+  return new Date(ts).toLocaleString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+// F-89: принимаем только http(s)-адреса с доменом; схему https:// подставляем, если её не ввели.
+function normalizeUrl(input) {
+  let s = str(input).trim();
+  if (!s || /\s/.test(s)) return null;
+  if (!/^[a-z][a-z0-9+.-]*:/i.test(s)) s = 'https://' + s;
+  let u;
+  try { u = new URL(s); } catch (e) { return null; }
+  if (u.protocol !== 'http:' && u.protocol !== 'https:') return null;
+  if (!u.hostname || (!u.hostname.includes('.') && u.hostname !== 'localhost')) return null;
+  return u.href;
+}
+function hostOf(url) {
+  try { return new URL(url).hostname.replace(/^www\./, ''); } catch (e) { return url; }
+}
+
+/* ================= Задачи ================= */
+
+const findTask = id => state.tasks.find(t => t.id === id);
+const hasDetails = t => !!(t.description.trim() || t.checklist.length || t.links.length);
+
+function saveTasks() {
+  write(KEYS.tasks, state.tasks);
+  scheduleBoards();
+}
+
+function addTask(title) {
+  title = str(title).trim();
+  if (!title) return null;
+  const task = { id: uid(), title, quadrant: 'q2', status: 'todo', createdAt: Date.now(), description: '', checklist: [], links: [] };
+  state.tasks.push(task);
+  saveTasks();
+  return task;
+}
+
+function updateTask(id, patch) {
+  const task = findTask(id);
+  if (!task) return;
+  if (Object.keys(patch).every(k => task[k] === patch[k])) return;
+  Object.assign(task, patch);
+  saveTasks();
+}
+
+// F-96: детали хранятся внутри задачи и удаляются вместе с ней.
+function deleteTask(id) {
+  state.tasks = state.tasks.filter(t => t.id !== id);
+  saveTasks();
+  if (detailsId === id) closeDetails();
+}
+
+function confirmDeleteTask(task) {
+  if (!hasDetails(task)) return true;
+  return confirm('Удалить задачу «' + task.title + '» вместе с описанием, чек-листом и ссылками?');
+}
+
+/* ================= Доски ================= */
+
+let boardsQueued = false;
+function scheduleBoards() {
+  if (boardsQueued) return;
+  boardsQueued = true;
+  requestAnimationFrame(() => {
+    boardsQueued = false;
+    renderBoards();
+  });
+}
+
+function renderBoards() {
+  renderBoard($('#matrix'), QUADRANTS, 'quadrant', STAGES, 'status');
+  renderBoard($('#kanban'), STAGES, 'status', QUADRANTS, 'quadrant');
+}
+
+function renderBoard(container, zones, field, otherZones, otherField) {
+  container.replaceChildren(...zones.map(zone => {
+    const tasks = state.tasks.filter(t => t[field] === zone.key).sort((a, b) => a.createdAt - b.createdAt);
+    return h('section', { class: 'zone', dataset: { zone: zone.key } },
+      h('header', { class: 'zone-head' },
+        h('span', { class: 'stripe', style: 'background:' + zone.color }),
+        h('h2', { text: zone.title }),
+        h('span', { class: 'count', text: String(tasks.length), title: 'Задач: ' + tasks.length })),
+      h('div', { class: 'zone-list' },
+        tasks.length ? tasks.map(t => renderCard(t, otherZones, otherField)) : h('div', { class: 'empty', text: 'пусто' })));
+  }));
+}
+
+function renderCard(task, otherZones, otherField) {
+  const other = otherZones.find(z => z.key === task[otherField]) || otherZones[0];
+  const indicators = [];
+  // F-85: индикаторы деталей.
+  if (task.description.trim()) {
+    indicators.push(h('span', { class: 'ind', title: 'Есть описание' }, icon('text')));
+  }
+  if (task.checklist.length) {
+    const done = task.checklist.filter(i => i.done).length;
+    const total = task.checklist.length;
+    indicators.push(h('span', { class: 'ind' + (done === total ? ' complete' : ''), title: 'Чек-лист: выполнено ' + done + ' из ' + total },
+      icon('check'), done + '/' + total));
+  }
+  if (task.links.length) {
+    indicators.push(h('span', { class: 'ind', title: 'Ссылок: ' + task.links.length }, icon('link'), String(task.links.length)));
+  }
+
+  return h('article', {
+    class: 'card' + (task.status === 'done' ? ' is-done' : ''),
+    draggable: 'true',
+    tabindex: '0',
+    dataset: { id: task.id },
+    'aria-label': task.title
+  },
+    h('div', { class: 'card-body' },
+      h('div', { class: 'card-title', text: task.title }),
+      h('div', { class: 'card-meta' },
+        h('span', { class: 'badge' }, h('span', { class: 'dot', style: 'background:' + other.color }), other.title),
+        indicators)),
+    h('button', { class: 'icon-btn danger card-del', type: 'button', title: 'Удалить', 'aria-label': 'Удалить задачу' }, icon('x')));
+}
+
+let dragId = null;
+let lastDragEnd = 0;
+
+function endDrag() {
+  dragId = null;
+  lastDragEnd = Date.now();
+  document.querySelectorAll('.card.dragging, .zone.over').forEach(el => el.classList.remove('dragging', 'over'));
+}
+
+function wireBoard(container) {
+  container.addEventListener('click', e => {
+    const card = e.target.closest('.card');
+    if (!card) return;
+    const task = findTask(card.dataset.id);
+    if (!task) return;
+    if (e.target.closest('.card-del')) {
+      if (confirmDeleteTask(task)) deleteTask(task.id);
+      return;
+    }
+    // F-90: щелчок сразу после перетаскивания не открывает детали.
+    if (Date.now() - lastDragEnd < 250) return;
+    openDetails(task.id);
+  });
+
+  container.addEventListener('keydown', e => {
+    const card = e.target.classList && e.target.classList.contains('card') ? e.target : null;
+    if (!card) return;
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      openDetails(card.dataset.id);
+    }
+  });
+
+  container.addEventListener('dragstart', e => {
+    const card = e.target.closest && e.target.closest('.card');
+    if (!card) return;
+    dragId = card.dataset.id;
+    e.dataTransfer.setData('text/plain', dragId);
+    e.dataTransfer.effectAllowed = 'move';
+    requestAnimationFrame(() => card.classList.add('dragging'));
+  });
+  container.addEventListener('dragend', endDrag);
+
+  container.addEventListener('dragover', e => {
+    const zone = e.target.closest('.zone');
+    if (!zone || !dragId) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    zone.classList.add('over');
+  });
+  container.addEventListener('dragleave', e => {
+    const zone = e.target.closest('.zone');
+    if (zone && !zone.contains(e.relatedTarget)) zone.classList.remove('over');
+  });
+  container.addEventListener('drop', e => {
+    const zone = e.target.closest('.zone');
+    if (!zone || !dragId) return;
+    e.preventDefault();
+    const id = dragId;
+    endDrag();
+    // F-05 / F-06: меняется только ось текущей доски.
+    updateTask(id, { [container.dataset.field]: zone.dataset.zone });
+  });
+}
+
+/* ================= Панель деталей задачи ================= */
+
+const overlay = $('#overlay');
+const panel = $('#panel');
+let detailsId = null;
+let editingLinkId = null;
+let overlayPointerDown = false;
+
+function openDetails(id) {
+  if (!findTask(id)) return;
+  detailsId = id;
+  editingLinkId = null;
+  renderPanel();
+  overlay.hidden = false;
+  requestAnimationFrame(() => overlay.classList.add('open'));
+  panel.scrollTop = 0;
+  panel.focus();
+}
+
+function closeDetails() {
+  if (detailsId == null) return;
+  const id = detailsId;
+  detailsId = null;
+  editingLinkId = null;
+  overlay.classList.remove('open');
+  overlay.hidden = true;
+  panel.replaceChildren();
+  const card = document.querySelector('.view:not([hidden]) .card[data-id="' + CSS.escape(id) + '"]');
+  if (card) card.focus();
+}
+
+function renderPanel() {
+  const task = findTask(detailsId);
+  if (!task) { closeDetails(); return; }
+
+  // Заголовок (F-08: пустой не сохраняется)
+  const titleInput = h('input', { class: 'panel-title', value: task.title, maxlength: '200', 'aria-label': 'Заголовок задачи', autocomplete: 'off' });
+  const titleError = h('div', { class: 'field-error', text: 'Заголовок не может быть пустым', hidden: true });
+  titleInput.addEventListener('input', () => {
+    const v = titleInput.value.trim();
+    titleError.hidden = !!v;
+    if (v) updateTask(task.id, { title: v });
+  });
+  titleInput.addEventListener('blur', () => { titleInput.value = task.title; titleError.hidden = true; });
+  titleInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); titleInput.blur(); } });
+
+  const select = (defs, value, onChange) => {
+    const el = h('select', { class: 'select' }, defs.map(d => h('option', { value: d.key, text: d.title })));
+    el.value = value;
+    el.addEventListener('change', () => onChange(el.value));
+    return el;
+  };
+
+  const description = h('textarea', { class: 'textarea', rows: '5', placeholder: 'Добавьте описание…', 'aria-label': 'Описание' });
+  description.value = task.description;
+  description.addEventListener('input', () => updateTask(task.id, { description: description.value }));
+
+  const checklistSec = h('section', { class: 'pane-sec' });
+  const linksSec = h('section', { class: 'pane-sec' });
+  renderChecklist(checklistSec, task);
+  renderLinks(linksSec, task);
+
+  panel.replaceChildren(
+    h('header', { class: 'panel-head' },
+      h('div', { class: 'grow' }, titleInput, titleError),
+      iconBtn('x', 'Закрыть (Esc)', closeDetails)),
+    h('div', { class: 'panel-body' },
+      h('section', { class: 'pane-sec' },
+        h('div', { class: 'selects' },
+          h('label', null, 'Квадрант', select(QUADRANTS, task.quadrant, v => updateTask(task.id, { quadrant: v }))),
+          h('label', null, 'Стадия', select(STAGES, task.status, v => updateTask(task.id, { status: v }))))),
+      h('section', { class: 'pane-sec' },
+        h('div', { class: 'sec-head' }, h('h3', { text: 'Описание' })),
+        description),
+      checklistSec,
+      linksSec),
+    h('footer', { class: 'panel-foot' },
+      h('span', { class: 'muted', text: 'Создана ' + fmtDate(task.createdAt) }),
+      h('button', {
+        class: 'btn danger-ghost', type: 'button',
+        onclick: () => { if (confirm('Удалить задачу «' + task.title + '»?')) deleteTask(task.id); }
+      }, 'Удалить задачу')));
+}
+
+function renderChecklist(sec, task) {
+  const total = task.checklist.length;
+  const done = task.checklist.filter(i => i.done).length;
+  const rerender = focusAdd => {
+    saveTasks();
+    renderChecklist(sec, task);
+    if (focusAdd) sec.querySelector('.inline-form .input').focus();
+  };
+
+  const items = task.checklist.map(item => {
+    const box = h('input', { type: 'checkbox', checked: item.done, 'aria-label': 'Выполнено: ' + item.text });
+    box.addEventListener('change', () => { item.done = box.checked; rerender(false); });
+    const text = h('input', { class: 'inline-input' + (item.done ? ' is-done' : ''), value: item.text, maxlength: '300', 'aria-label': 'Текст пункта' });
+    text.addEventListener('input', () => {
+      const v = text.value.trim();
+      if (v) { item.text = v; saveTasks(); }
+    });
+    text.addEventListener('blur', () => { text.value = item.text; });
+    text.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); text.blur(); } });
+    const del = iconBtn('x', 'Удалить пункт', () => {
+      task.checklist = task.checklist.filter(i => i !== item);
+      rerender(false);
+    }, 'danger');
+    return h('li', { class: 'check-item' }, box, text, del);
+  });
+
+  const addInput = h('input', { class: 'input', placeholder: 'Новый пункт…', maxlength: '300', autocomplete: 'off', 'aria-label': 'Новый пункт чек-листа' });
+  const form = h('form', {
+    class: 'inline-form', novalidate: '',
+    onsubmit: e => {
+      e.preventDefault();
+      const v = addInput.value.trim();
+      if (!v) { addInput.focus(); return; }
+      task.checklist.push({ id: uid(), text: v, done: false });
+      rerender(true);
+    }
+  }, addInput, h('button', { class: 'btn', type: 'submit' }, 'Добавить'));
+
+  sec.replaceChildren(
+    h('div', { class: 'sec-head' },
+      h('h3', { text: 'Чек-лист' }),
+      total ? h('span', { class: 'muted', text: 'выполнено ' + done + ' из ' + total }) : null),
+    total ? h('div', { class: 'progress' }, h('i', { style: 'width:' + Math.round(done / total * 100) + '%' })) : null,
+    h('ul', { class: 'list' }, items),
+    form);
+}
+
+function linkForm(initial, submitLabel, onSubmit, onCancel) {
+  const url = h('input', { class: 'input', placeholder: 'https://…', 'aria-label': 'Адрес ссылки', autocomplete: 'off', spellcheck: 'false' });
+  const label = h('input', { class: 'input', placeholder: 'Подпись (необязательно)', maxlength: '200', 'aria-label': 'Подпись ссылки', autocomplete: 'off' });
+  url.value = initial.url || '';
+  label.value = initial.label || '';
+  const error = h('div', { class: 'field-error', hidden: true, text: 'Введите корректный адрес, например https://example.com' });
+  url.addEventListener('input', () => { error.hidden = true; url.classList.remove('invalid'); });
+
+  const form = h('form', {
+    class: 'link-form', novalidate: '',
+    onsubmit: e => {
+      e.preventDefault();
+      const normalized = normalizeUrl(url.value);
+      if (!normalized) {
+        error.hidden = false;
+        url.classList.add('invalid');
+        url.focus();
+        return;
+      }
+      onSubmit(normalized, label.value.trim());
+    }
+  },
+    h('div', { class: 'row' }, url, label),
+    error,
+    h('div', { class: 'row' },
+      h('button', { class: 'btn', type: 'submit' }, submitLabel),
+      onCancel ? h('button', { class: 'btn danger-ghost', type: 'button', onclick: onCancel }, 'Отмена') : null));
+  if (onCancel) form.addEventListener('keydown', e => { if (e.key === 'Escape') { e.stopPropagation(); onCancel(); } });
+  return form;
+}
+
+function renderLinks(sec, task) {
+  const rerender = () => { saveTasks(); renderLinks(sec, task); };
+
+  const items = task.links.map(link => {
+    if (editingLinkId === link.id) {
+      const form = linkForm(link, 'Сохранить', (url, label) => {
+        link.url = url;
+        link.label = label;
+        editingLinkId = null;
+        rerender();
+      }, () => { editingLinkId = null; renderLinks(sec, task); });
+      setTimeout(() => form.querySelector('.input').focus());
+      return h('li', null, form);
+    }
+    // F-88: ссылки открываются в новой вкладке.
+    return h('li', { class: 'link-item' },
+      h('a', { class: 'link-main', href: link.url, target: '_blank', rel: 'noopener noreferrer', title: link.url },
+        icon('external'),
+        h('span', { class: 'link-text' },
+          h('span', { class: 'link-label', text: link.label || hostOf(link.url) }),
+          h('span', { class: 'link-url', text: link.url }))),
+      iconBtn('edit', 'Изменить ссылку', () => { editingLinkId = link.id; renderLinks(sec, task); }),
+      iconBtn('x', 'Удалить ссылку', () => {
+        task.links = task.links.filter(l => l !== link);
+        rerender();
+      }, 'danger'));
+  });
+
+  const addForm = linkForm({}, 'Добавить ссылку', (url, label) => {
+    task.links.push({ id: uid(), url, label });
+    rerender();
+    sec.querySelector('.link-form:last-child .input').focus();
+  });
+
+  sec.replaceChildren(
+    h('div', { class: 'sec-head' },
+      h('h3', { text: 'Ссылки' }),
+      task.links.length ? h('span', { class: 'muted', text: String(task.links.length) }) : null),
+    h('ul', { class: 'list' }, items),
+    addForm);
+}
+
+overlay.addEventListener('pointerdown', e => { overlayPointerDown = e.target === overlay; });
+overlay.addEventListener('click', e => {
+  // N-24: клик вне панели закрывает её (только если и нажатие было вне панели).
+  if (e.target === overlay && overlayPointerDown) closeDetails();
+});
+
+/* ================= Pomodoro ================= */
+
+function makeTimer(key, title, minutes) {
+  return { key, title, minutes, max: LIMITS[key], state: 'idle', remaining: minutes * 60000, endsAt: 0 };
+}
+const timers = {
+  work: makeTimer('work', 'Работа', state.settings.workMinutes),
+  rest: makeTimer('rest', 'Отдых', state.settings.restMinutes)
+};
+let lastActive = null;
+
+const fullMs = t => t.minutes * 60000;
+const remainingMs = t => t.state === 'running' ? Math.max(0, t.endsAt - Date.now()) : t.remaining;
+function fmtTime(ms) {
+  const s = Math.ceil(ms / 1000);
+  return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+}
+
+function startTimer(t) {
+  if (t.state === 'running') return;
+  if (t.remaining <= 0) t.remaining = fullMs(t);
+  t.endsAt = Date.now() + t.remaining;
+  t.state = 'running';
+  lastActive = t;
+  unlockAudio();
+  renderTimers();
+}
+function pauseTimer(t) {
+  if (t.state !== 'running') return;
+  t.remaining = remainingMs(t);
+  t.state = 'paused';
+  lastActive = t;
+  renderTimers();
+}
+function resetTimer(t) {
+  t.state = 'idle';
+  t.remaining = fullMs(t);
+  renderTimers();
+}
+function setMinutes(t, value) {
+  t.minutes = clamp(value, 1, t.max);
+  if (t.state === 'idle') t.remaining = fullMs(t);
+  state.settings[t.key + 'Minutes'] = t.minutes;
+  write(KEYS.settings, state.settings);
+  renderTimers();
+}
+
+// F-36 / F-37: по окончании одного таймера через 400 мс запускается другой.
+function finishTimer(t) {
+  t.state = 'idle';
+  t.remaining = fullMs(t);
+  chime(t.key);
+  const next = t.key === 'work' ? timers.rest : timers.work;
+  notifyFinished(t, next);
+  setTimeout(() => {
+    resetTimer(next);
+    startTimer(next);
+  }, 400);
+}
+
+function tick() {
+  let active = false;
+  for (const t of Object.values(timers)) {
+    if (t.state !== 'running') continue;
+    active = true;
+    if (remainingMs(t) <= 0) finishTimer(t);
+  }
+  if (active) renderTimers();
+}
+
+// Отсчёт ведётся от точного времени окончания, а тики идут из Web Worker:
+// таймеры воркеров браузер почти не замедляет в фоновых вкладках.
+function startTicker() {
+  setInterval(tick, 1000);
+  try {
+    const url = URL.createObjectURL(new Blob(['setInterval(function(){postMessage(0)},250)'], { type: 'text/javascript' }));
+    const worker = new Worker(url);
+    worker.onmessage = tick;
+  } catch (e) {
+    setInterval(tick, 250);
+  }
+}
+
+// F-38: сигналы синтезируются через Web Audio, без файлов.
+let audio = null;
+function unlockAudio() {
+  try {
+    if (!audio) audio = new (window.AudioContext || window.webkitAudioContext)();
+    if (audio.state === 'suspended') audio.resume();
+  } catch (e) { audio = null; }
+}
+function chime(kind) {
+  if (!audio) return;
+  const notes = kind === 'work' ? [880, 698.46, 523.25] : [523.25, 659.25, 783.99];
+  const t0 = audio.currentTime + 0.02;
+  notes.forEach((freq, i) => {
+    const osc = audio.createOscillator();
+    const gain = audio.createGain();
+    const s = t0 + i * 0.25;
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(0.0001, s);
+    gain.gain.exponentialRampToValueAtTime(0.3, s + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, s + 0.22);
+    osc.connect(gain).connect(audio.destination);
+    osc.start(s);
+    osc.stop(s + 0.24);
+  });
+}
+
+const timerUi = {};
+function buildTimerCard(t) {
+  const el = $('#timer-' + t.key);
+  const minutes = h('input', { class: 'input', type: 'number', min: '1', max: String(t.max), step: '1', inputmode: 'numeric', 'aria-label': 'Длительность, минут' });
+  const apply = () => {
+    const v = parseInt(minutes.value, 10);
+    if (Number.isFinite(v) && v !== t.minutes) setMinutes(t, v);
+    minutes.value = t.minutes;
+  };
+  minutes.addEventListener('change', apply);
+  minutes.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { apply(); minutes.blur(); }
+    if (e.key === 'Escape') { minutes.value = t.minutes; minutes.blur(); }
+  });
+
+  const ui = {
+    root: el,
+    state: h('span', { class: 't-state' }),
+    time: h('div', { class: 't-time', role: 'timer' }),
+    bar: h('i'),
+    start: h('button', { class: 'btn ' + t.key, type: 'button', onclick: () => { askNotifyPermission(); startTimer(t); } }, 'Старт'),
+    pause: h('button', { class: 'btn', type: 'button', onclick: () => pauseTimer(t) }, 'Пауза'),
+    reset: h('button', { class: 'btn', type: 'button', onclick: () => resetTimer(t) }, 'Сброс'),
+    minutes,
+    hint: h('p', { class: 'hint', text: 'Новая длительность применится после сброса' })
+  };
+  el.replaceChildren(
+    h('div', { class: 't-head' }, h('h2', { text: t.title }), ui.state),
+    ui.time,
+    h('div', { class: 't-bar' }, ui.bar),
+    h('div', { class: 't-buttons' }, ui.start, ui.pause, ui.reset),
+    h('div', { class: 't-duration' },
+      h('label', { for: 'min-' + t.key }, 'Длительность, мин', h('small', { text: 'от 1 до ' + t.max })),
+      minutes),
+    ui.hint);
+  minutes.id = 'min-' + t.key;
+  timerUi[t.key] = ui;
+}
+
+function renderTimers() {
+  for (const t of Object.values(timers)) {
+    const ui = timerUi[t.key];
+    const ms = remainingMs(t);
+    ui.time.textContent = fmtTime(ms);
+    ui.bar.style.width = (100 - ms / fullMs(t) * 100).toFixed(2) + '%';
+    ui.root.classList.toggle('active', t.state === 'running');
+    ui.state.textContent = t.state === 'running' ? 'Идёт' : t.state === 'paused' ? 'Пауза' : 'Остановлен';
+    ui.start.disabled = t.state === 'running';
+    ui.pause.disabled = t.state !== 'running';
+    ui.reset.disabled = t.state === 'idle';
+    ui.hint.hidden = t.state === 'idle';
+    if (document.activeElement !== ui.minutes) ui.minutes.value = t.minutes;
+  }
+  renderWidget();
+}
+
+// F-40..F-46, F-97
+function renderWidget() {
+  const { work, rest } = timers;
+  let shown = null;
+  let running = false;
+  if (work.state === 'running') { shown = work; running = true; }
+  else if (rest.state === 'running') { shown = rest; running = true; }
+  else if (lastActive && lastActive.state === 'paused') shown = lastActive;
+  else if (work.state === 'paused') shown = work;
+  else if (rest.state === 'paused') shown = rest;
+
+  const widget = $('#widget');
+  widget.classList.toggle('work', running && shown === work);
+  widget.classList.toggle('rest', running && shown === rest);
+  widget.classList.toggle('running', running);
+  $('#wLabel').textContent = shown ? (running ? shown.title : shown.title + ' · пауза') : 'Pomodoro';
+  $('#wTime').textContent = shown ? fmtTime(remainingMs(shown)) : '—';
+  const normalTitle = shown ? fmtTime(remainingMs(shown)) + ' · ' + shown.title + (running ? '' : ' (пауза)') + ' — Task Tracker' : 'Task Tracker';
+  // Пока вкладка в фоне после окончания таймера, заголовок мигает сообщением.
+  document.title = titleAlert && Math.floor(Date.now() / 1000) % 2 === 0 ? '(!) ' + titleAlert : normalTitle;
+}
+
+/* ================= Уведомления об окончании таймера ================= */
+
+let titleAlert = null;
+const canNotify = () => 'Notification' in window;
+
+// Разрешение спрашиваем только по нажатию «Старт»: браузеры игнорируют запрос без действия пользователя.
+function askNotifyPermission() {
+  if (!canNotify() || Notification.permission !== 'default') return;
+  try {
+    const result = Notification.requestPermission(updateNotifyHint);
+    if (result && result.then) result.then(updateNotifyHint, updateNotifyHint);
+  } catch (e) { updateNotifyHint(); }
+}
+
+function updateNotifyHint() {
+  const hint = $('#notifyHint');
+  const state = canNotify() ? Notification.permission : 'unsupported';
+  hint.hidden = state === 'granted' || state === 'default';
+  hint.textContent = state === 'denied'
+    ? 'Уведомления браузера запрещены для этой страницы. Окончание таймера будет видно по звуку и миганию заголовка вкладки. Разрешить их можно в настройках сайта (значок слева от адреса).'
+    : 'Этот браузер не поддерживает уведомления. Окончание таймера будет видно по звуку и миганию заголовка вкладки.';
+}
+
+function notifyFinished(t, next) {
+  const title = t.key === 'work' ? 'Работа окончена' : 'Отдых окончен';
+  const body = (next.key === 'work' ? 'Начинается работа' : 'Начинается отдых') + ': ' + next.minutes + ' мин.';
+  if (!document.hidden && document.hasFocus()) {
+    toast(title + '. ' + body);
+    return;
+  }
+  if (canNotify() && Notification.permission === 'granted') {
+    try {
+      const n = new Notification(title, { body, tag: 'task-tracker-pomodoro' });
+      n.onclick = () => { window.focus(); n.close(); };
+    } catch (e) { /* остаётся мигание заголовка */ }
+  }
+  titleAlert = title;
+}
+
+function stopTitleAlert() {
+  if (!titleAlert) return;
+  titleAlert = null;
+  renderWidget();
+}
+window.addEventListener('focus', stopTitleAlert);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) stopTitleAlert(); });
+
+/* ================= Пространство: заметки ================= */
+
+let openNoteId = null;
+const saveNotes = () => write(KEYS.notes, state.notes);
+
+function renderNotes() {
+  const list = $('#notesList');
+  $('#notesCount').textContent = state.notes.length;
+  if (!state.notes.length) {
+    list.replaceChildren(h('div', { class: 'empty', text: 'пусто' }));
+    return;
+  }
+  const sorted = state.notes.slice().sort((a, b) => b.updatedAt - a.updatedAt);
+  list.replaceChildren(...sorted.map(n => n.id === openNoteId ? noteEditor(n) : noteRow(n)));
+}
+
+function noteRow(note) {
+  const firstLine = note.text.split('\n').find(l => l.trim()) || '';
+  return h('button', {
+    class: 'note-row', type: 'button', 'aria-expanded': 'false',
+    onclick: () => { openNoteId = note.id; renderNotes(); }
+  },
+    h('span', { class: 'note-title', text: note.title }),
+    h('span', { class: 'note-date', text: fmtDate(note.updatedAt) }),
+    firstLine ? h('span', { class: 'note-preview', text: firstLine }) : null);
+}
+
+function noteEditor(note) {
+  const title = h('input', { class: 'input', maxlength: '200', 'aria-label': 'Заголовок заметки', autocomplete: 'off' });
+  title.value = note.title;
+  const text = h('textarea', { class: 'textarea', 'aria-label': 'Текст заметки' });
+  text.value = note.text;
+  const error = h('div', { class: 'field-error', hidden: true, text: 'Введите заголовок заметки' });
+  title.addEventListener('input', () => { error.hidden = true; title.classList.remove('invalid'); });
+  const collapse = () => { openNoteId = null; renderNotes(); };
+
+  const form = h('form', {
+    class: 'note-edit', novalidate: '',
+    onsubmit: e => {
+      e.preventDefault();
+      const v = title.value.trim();
+      if (!v) { error.hidden = false; title.classList.add('invalid'); title.focus(); return; }
+      note.title = v;
+      note.text = text.value;
+      note.updatedAt = Date.now();
+      saveNotes();
+      collapse();
+      toast('Заметка сохранена');
+    }
+  },
+    title, text, error,
+    h('div', { class: 'row' },
+      h('button', { class: 'btn primary', type: 'submit' }, 'Сохранить'),
+      h('button', { class: 'btn', type: 'button', onclick: collapse }, 'Свернуть'),
+      h('span', { style: 'flex:1' }),
+      h('button', {
+        class: 'btn danger-ghost', type: 'button',
+        onclick: () => {
+          if (!confirm('Удалить заметку «' + note.title + '»?')) return;
+          state.notes = state.notes.filter(n => n !== note);
+          saveNotes();
+          collapse();
+        }
+      }, 'Удалить')),
+    h('span', { class: 'hint', text: 'Изменена ' + fmtDate(note.updatedAt) + '. «Свернуть» закрывает заметку без сохранения правок.' }));
+  form.addEventListener('keydown', e => { if (e.key === 'Escape') collapse(); });
+  setTimeout(() => text.focus());
+  return form;
+}
+
+$('#noteForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const title = $('#noteTitle');
+  const text = $('#noteText');
+  const v = title.value.trim();
+  if (!v) {
+    $('#noteError').hidden = false;
+    title.classList.add('invalid');
+    title.focus();
+    return;
+  }
+  const now = Date.now();
+  state.notes.push({ id: uid(), title: v, text: text.value, createdAt: now, updatedAt: now });
+  saveNotes();
+  title.value = '';
+  text.value = '';
+  renderNotes();
+  title.focus();
+});
+$('#noteTitle').addEventListener('input', () => { $('#noteError').hidden = true; $('#noteTitle').classList.remove('invalid'); });
+
+/* ================= Пространство: секреты ================= */
+
+const revealed = new Set();
+let editSecretId = null;
+const saveSecrets = () => write(KEYS.secrets, state.secrets);
+
+function renderSecrets() {
+  const list = $('#secretsList');
+  $('#secretsCount').textContent = state.secrets.length;
+  if (!state.secrets.length) {
+    list.replaceChildren(h('li', { class: 'empty', text: 'пусто' }));
+    return;
+  }
+  list.replaceChildren(...state.secrets.map(s => s.id === editSecretId ? secretEditor(s) : secretRow(s)));
+}
+
+function secretRow(secret) {
+  const shown = revealed.has(secret.id);
+  return h('li', { class: 'secret' },
+    h('div', { class: 'secret-main' },
+      h('div', { class: 'secret-name', text: secret.name }),
+      // Маска фиксированной длины, чтобы не выдавать длину значения.
+      h('code', { class: 'secret-value' + (shown ? '' : ' masked'), text: shown ? secret.value : '••••••••••' })),
+    h('div', { class: 'secret-actions' },
+      h('button', {
+        class: 'btn small', type: 'button', 'aria-pressed': String(shown),
+        onclick: () => { shown ? revealed.delete(secret.id) : revealed.add(secret.id); renderSecrets(); }
+      }, shown ? 'Скрыть' : 'Показать'),
+      iconBtn('copy', 'Копировать значение', () => copyText(secret.value)),
+      iconBtn('edit', 'Изменить', () => { editSecretId = secret.id; renderSecrets(); }),
+      iconBtn('x', 'Удалить', () => {
+        if (!confirm('Удалить секрет «' + secret.name + '»?')) return;
+        state.secrets = state.secrets.filter(s => s !== secret);
+        revealed.delete(secret.id);
+        saveSecrets();
+        renderSecrets();
+      }, 'danger')));
+}
+
+function secretEditor(secret) {
+  const name = h('input', { class: 'input', maxlength: '200', 'aria-label': 'Название секрета', autocomplete: 'off' });
+  name.value = secret.name;
+  const value = h('input', { class: 'input', 'aria-label': 'Значение секрета', autocomplete: 'off', spellcheck: 'false' });
+  value.value = secret.value;
+  const error = h('div', { class: 'field-error', hidden: true, text: 'Заполните название и значение' });
+  const cancel = () => { editSecretId = null; renderSecrets(); };
+
+  const form = h('form', {
+    class: 'secret-edit', novalidate: '',
+    onsubmit: e => {
+      e.preventDefault();
+      const n = name.value.trim();
+      if (!n || !value.value) { error.hidden = false; return; }
+      secret.name = n;
+      secret.value = value.value;
+      saveSecrets();
+      cancel();
+      toast('Секрет сохранён');
+    }
+  },
+    name, value, error,
+    h('div', { class: 'row' },
+      h('button', { class: 'btn primary', type: 'submit' }, 'Сохранить'),
+      h('button', { class: 'btn', type: 'button', onclick: cancel }, 'Отмена')));
+  form.addEventListener('keydown', e => { if (e.key === 'Escape') cancel(); });
+  setTimeout(() => name.focus());
+  return h('li', null, form);
+}
+
+$('#secretForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const name = $('#secretName');
+  const value = $('#secretValue');
+  const n = name.value.trim();
+  if (!n || !value.value) {
+    $('#secretError').hidden = false;
+    (n ? value : name).focus();
+    return;
+  }
+  state.secrets.push({ id: uid(), name: n, value: value.value, createdAt: Date.now() });
+  saveSecrets();
+  name.value = '';
+  value.value = '';
+  renderSecrets();
+  name.focus();
+});
+['#secretName', '#secretValue'].forEach(sel => $(sel).addEventListener('input', () => { $('#secretError').hidden = true; }));
+
+// F-70
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast('Значение скопировано');
+    return;
+  } catch (e) { /* ниже — запасной способ */ }
+  const ta = h('textarea', { style: 'position:fixed;top:-1000px;opacity:0' });
+  ta.value = text;
+  document.body.append(ta);
+  ta.select();
+  let ok = false;
+  try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+  ta.remove();
+  toast(ok ? 'Значение скопировано' : 'Не удалось скопировать');
+}
+
+/* ================= Вкладки и запуск ================= */
+
+const TABS = ['matrix', 'kanban', 'pomodoro', 'space'];
+let currentTab = null;
+
+function showTab(name) {
+  if (!TABS.includes(name)) name = 'matrix';
+  currentTab = name;
+  document.querySelectorAll('.tab').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === name)));
+  TABS.forEach(t => { $('#view-' + t).hidden = t !== name; });
+  $('#addbar').hidden = !(name === 'matrix' || name === 'kanban');
+  $('#widget').hidden = name === 'pomodoro'; // F-41
+  try { localStorage.setItem(KEYS.tab, name); } catch (e) { /* не критично */ }
+}
+
+document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
+$('#widget').addEventListener('click', () => showTab('pomodoro'));
+
+$('#addForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const input = $('#addInput');
+  if (!addTask(input.value)) {
+    $('#addError').hidden = false;
+    $('#addHint').hidden = true;
+    input.classList.add('invalid');
+    input.focus();
+    return;
+  }
+  input.value = '';
+  input.focus();
+});
+$('#addInput').addEventListener('input', () => {
+  $('#addError').hidden = true;
+  $('#addHint').hidden = false;
+  $('#addInput').classList.remove('invalid');
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && detailsId != null) {
+    e.preventDefault();
+    closeDetails();
+  }
+});
+
+// Изменения из другой вкладки браузера с этим же файлом.
+window.addEventListener('storage', e => {
+  if (e.key === KEYS.tasks || e.key == null) {
+    state.tasks = loadTasks();
+    renderBoards();
+    if (detailsId != null) renderPanel();
+  }
+  if (e.key === KEYS.notes || e.key == null) { state.notes = loadNotes(); renderNotes(); }
+  if (e.key === KEYS.secrets || e.key == null) { state.secrets = loadSecrets(); renderSecrets(); }
+  if (e.key === KEYS.settings || e.key == null) {
+    state.settings = loadSettings();
+    for (const t of Object.values(timers)) {
+      t.minutes = state.settings[t.key + 'Minutes'];
+      if (t.state === 'idle') t.remaining = fullMs(t);
+    }
+    renderTimers();
+  }
+});
+
+wireBoard($('#matrix'));
+wireBoard($('#kanban'));
+buildTimerCard(timers.work);
+buildTimerCard(timers.rest);
+renderBoards();
+renderTimers();
+renderNotes();
+renderSecrets();
+let savedTab = null;
+try { savedTab = localStorage.getItem(KEYS.tab); } catch (e) { /* хранилище недоступно */ }
+showTab(savedTab);
+updateNotifyHint();
+startTicker();
+</script>
+</body>
+</html>

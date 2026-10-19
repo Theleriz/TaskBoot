@@ -1,0 +1,5 @@
+# Build output
+win32/bin/
+
+# Temporary files from atomic saves
+*.tmp
