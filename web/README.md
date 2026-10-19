@@ -14,26 +14,28 @@ Run them from this folder (`web/`):
 npm ci
 ```
 
-| Command | What it does |
-|---|---|
-| `npm run dev` | Dev server with hot reload at http://localhost:5173 |
-| `npm run build` | Type-check and build to `dist/` |
-| `npm run preview` | Serve the built `dist/` locally |
-| `npm run test` | Unit tests (Vitest + Testing Library, jsdom) |
-| `npm run lint` | ESLint |
-| `npm run format` | Format with Prettier |
-| `npm run check` | Type-check, lint, format check and tests — run before every commit |
+| Command           | What it does                                                       |
+| ----------------- | ------------------------------------------------------------------ |
+| `npm run dev`     | Dev server with hot reload at http://localhost:5173                |
+| `npm run build`   | Type-check and build to `dist/`                                    |
+| `npm run preview` | Serve the built `dist/` locally                                    |
+| `npm run test`    | Unit tests (Vitest + Testing Library, jsdom)                       |
+| `npm run lint`    | ESLint                                                             |
+| `npm run format`  | Format with Prettier                                               |
+| `npm run check`   | Type-check, lint, format check and tests — run before every commit |
 
 ## Layout
 
-| Path | Contents |
-|---|---|
-| `src/main.tsx` | Entry point |
-| `src/App.tsx` | App shell with tabs (views are ported in phase 0.4) |
-| `src/styles/tokens.css` | Design tokens (CSS variables, light and dark) |
-| `src/test/setup.ts` | Test setup (jest-dom matchers) |
-| `public/` | Static files copied as is (icon) |
-| `legacy/` | Previous single-file version, kept until the new app reaches parity; excluded from lint, format and build |
+| Path                    | Contents                                                                                                  |
+| ----------------------- | --------------------------------------------------------------------------------------------------------- |
+| `src/main.tsx`          | Entry point                                                                                               |
+| `src/App.tsx`           | App shell with tabs (views are ported in phase 0.4)                                                       |
+| `src/styles/tokens.css` | Design tokens (CSS variables, light and dark)                                                             |
+| `src/data/`             | Data model, normalization, schema migrations, storage (browser / shell / memory), import and export       |
+| `src/bridge/`           | Messaging with the Windows WebView2 shell; contract in `docs/bridge-protocol.md`                          |
+| `src/test/setup.ts`     | Test setup (jest-dom matchers)                                                                            |
+| `public/`               | Static files copied as is (icon)                                                                          |
+| `legacy/`               | Previous single-file version, kept until the new app reaches parity; excluded from lint, format and build |
 
 ## Dependencies
 

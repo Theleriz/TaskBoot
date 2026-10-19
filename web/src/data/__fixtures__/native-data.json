@@ -1,0 +1,52 @@
+{
+  "tasks": [
+    {
+      "id": "a1",
+      "title": "Подготовить отчёт",
+      "quadrant": "q1",
+      "status": "doing",
+      "createdAt": 1792390000000,
+      "description": "",
+      "checklist": [],
+      "links": []
+    },
+    {
+      "id": "a2",
+      "title": "Исправить падение при сохранении",
+      "quadrant": "q1",
+      "status": "todo",
+      "createdAt": 1792390001000,
+      "description": "Стек в логах",
+      "checklist": [
+        { "id": "c1", "text": "Воспроизвести", "done": true },
+        { "id": "c2", "text": "Написать тест", "done": false }
+      ],
+      "links": [{ "id": "l1", "url": "https://example.com/issue/1", "label": "Issue" }]
+    }
+  ],
+  "settings": {
+    "workMinutes": 45,
+    "restMinutes": 15,
+    "theme": {
+      "mode": "saved",
+      "customBg": "#221C36",
+      "customAccent": "#7048E8",
+      "randomBg": null,
+      "randomAccent": null,
+      "savedId": "t1"
+    },
+    "themes": [{ "id": "t1", "name": "Фиолетовая", "bg": "#F3EDF5", "accent": "#A95DD4" }]
+  },
+  "notes": [
+    {
+      "id": "n1",
+      "title": "Идеи",
+      "text": "Экспорт в JSON",
+      "createdAt": 1792390000000,
+      "updatedAt": 1792390000000
+    }
+  ],
+  "secrets": [
+    { "id": "s1", "name": "Тестовый токен", "value": "demo-value", "createdAt": 1792390000000 }
+  ]
+}
