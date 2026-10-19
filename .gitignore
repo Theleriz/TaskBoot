@@ -1,5 +1,53 @@
-# Build output
-win32/bin/
+# See docs/secrets-policy.md for the rules behind this file.
 
-# Temporary files from atomic saves
+# ---------- Build output ----------
+win32/bin/
 *.tmp
+
+# ---------- AI agent context (never commit) ----------
+# Settings, transcripts, memory, plans and launch configs of coding agents.
+.claude/
+CLAUDE.local.md
+.Agents/
+.agents/
+.Skill/
+.skills/
+.cursor/
+.windsurf/
+.continue/
+.codex/
+.aider*
+.copilot/
+
+# ---------- Environment variables ----------
+# Real values live in .env.local (ignored). .env is the committed example with placeholders only.
+.env.local
+.env.*.local
+.env.*
+!.env.example
+
+# ---------- Secrets and credentials ----------
+*.pem
+*.key
+*.pfx
+*.p12
+*.snk
+*.cer
+*.crt
+id_rsa*
+id_ed25519*
+*.keystore
+secrets.json
+credentials.json
+
+# ---------- App data (may contain notes and secrets in plain text) ----------
+data.json
+*.corrupt-*
+
+# ---------- OS / editor noise ----------
+Thumbs.db
+Desktop.ini
+.DS_Store
+.vs/
+.vscode/
+*.user
