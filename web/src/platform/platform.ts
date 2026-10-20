@@ -1,12 +1,7 @@
 import type { BridgeClient } from '../bridge/client.ts';
 import { createBridgeClient } from '../bridge/client.ts';
 import { createWebViewTransport, getWebView } from '../bridge/webview.ts';
-import {
-  type DataStore,
-  createBrowserStore,
-  createMemoryStore,
-  createShellStore,
-} from '../data/store.ts';
+import { type DataStore, createBrowserDataStore, createShellStore } from '../data/store.ts';
 
 export type NotifyPermission = 'native' | 'granted' | 'default' | 'denied' | 'unsupported';
 
@@ -143,7 +138,7 @@ export function createEnvironment(win: Window = window): Environment {
     return { store: createShellStore(bridge), platform: shellPlatform(bridge, win), prefs };
   }
   return {
-    store: prefs ? createBrowserStore(prefs) : createMemoryStore(),
+    store: createBrowserDataStore(win, prefs),
     platform: browserPlatform(win),
     prefs,
   };

@@ -238,6 +238,7 @@ The Windows app also uses components of Windows itself (.NET Framework 4.8, Micr
 | eslint-config-prettier | 10.1.8 | MIT |
 | eslint-plugin-react-hooks | 7.1.1 | MIT |
 | eslint-plugin-react-refresh | 0.5.7 | MIT |
+| fake-indexeddb | 6.2.5 | Apache-2.0 |
 | globals | 17.13.0 | MIT |
 | jsdom | 30.1.3 | MIT |
 | prettier | 3.9.10 | MIT |
@@ -246,12 +247,12 @@ The Windows app also uses components of Windows itself (.NET Framework 4.8, Micr
 | vite | 8.3.4 | MIT |
 | vitest | 5.0.5 | MIT |
 
-### npm: all 257 development packages by license
+### npm: all 258 development packages by license
 
 | License | Packages |
 |---|---|
 | MIT | 197 |
-| Apache-2.0 | 18 |
+| Apache-2.0 | 19 |
 | MPL-2.0 | 12 |
 | ISC | 11 |
 | BSD-2-Clause | 8 |

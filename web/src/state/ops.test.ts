@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createEmptyData } from '../data/normalize.ts';
 import {
   addChecklistItem,
+  addNote,
   addLink,
   addTask,
   deleteTask,
@@ -60,6 +61,15 @@ describe('ops', () => {
     addChecklistItem(d, 't1', 'step', 'c1');
     deleteTask(d, 't1');
     expect(d.tasks).toEqual([]);
+  });
+
+  it('keeps notes when a linked task is deleted, without the link', () => {
+    const d = withTask();
+    addTask(d, 'Other', 't2', 2);
+    addNote(d, 'Note', '', 'n1', 3, null);
+    d.notes[0]!.taskIds = ['t1', 't2'];
+    deleteTask(d, 't1');
+    expect(d.notes[0]?.taskIds).toEqual(['t2']);
   });
 
   it('clamps durations (F-34)', () => {

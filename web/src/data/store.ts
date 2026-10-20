@@ -1,6 +1,7 @@
 import { BridgeError, type BridgeClient, createBridgeClient } from '../bridge/client.ts';
 import { createWebViewTransport, getWebView } from '../bridge/webview.ts';
 import { DataFormatError, StorageError } from './errors.ts';
+import { type KeyValueStore, createIdbKeyValue } from './idb.ts';
 import { readLegacyData } from './legacy.ts';
 import type { AppData } from './model.ts';
 import { createEmptyData } from './normalize.ts';
@@ -10,10 +11,12 @@ export interface LoadResult {
   data: AppData;
   /**
    * stored — read from this store;
+   * moved — nothing stored yet, taken from this browser's previous storage (localStorage);
    * legacy — nothing stored yet, imported from the legacy web app's keys in this browser;
    * new — nothing found, empty data.
+   * For moved and legacy data the caller saves once, so it lands in this store.
    */
-  origin: 'stored' | 'legacy' | 'new';
+  origin: 'stored' | 'moved' | 'legacy' | 'new';
 }
 
 /**
@@ -29,9 +32,10 @@ export interface DataStore {
   save(data: AppData): Promise<void>;
 }
 
-/** Current data lives under one key; the legacy keys stay untouched (N-22). */
+/** localStorage key used up to v2.0.0; the legacy keys stay untouched (N-22). */
 export const BROWSER_DATA_KEY = 'taskTracker.data';
 
+/** Data in localStorage (up to v2.0.0; now the fallback when IndexedDB does not work). */
 export function createBrowserStore(storage: Storage, key = BROWSER_DATA_KEY): DataStore {
   return {
     kind: 'browser',
@@ -63,6 +67,61 @@ export function createBrowserStore(storage: Storage, key = BROWSER_DATA_KEY): Da
     async save(data) {
       try {
         storage.setItem(key, JSON.stringify(data));
+      } catch (e) {
+        throw new StorageError(
+          'Could not save: browser storage is full or blocked. ' +
+            (e instanceof Error ? e.message : ''),
+        );
+      }
+    },
+  };
+}
+
+/** Key of the data document in IndexedDB. */
+export const IDB_DATA_KEY = 'data';
+
+/**
+ * Data in IndexedDB (since v2.1.0): localStorage holds only about 5 MB, too little for notes.
+ * On first start the data comes from `previous` (the localStorage store), which is left untouched,
+ * so an older app version still finds its data. If IndexedDB cannot be opened, `previous`
+ * stays in use for this session.
+ */
+export function createIndexedDbStore(kv: KeyValueStore, previous: DataStore | null): DataStore {
+  let fallback: DataStore | null = null;
+
+  return {
+    kind: 'browser',
+    persistent: true,
+
+    async load() {
+      let raw: string | undefined;
+      try {
+        raw = await kv.get(IDB_DATA_KEY);
+      } catch (e) {
+        if (!previous) throw e;
+        fallback = previous;
+        return previous.load();
+      }
+      if (raw === undefined) {
+        if (!previous) return { data: createEmptyData(), origin: 'new' };
+        const result = await previous.load();
+        return result.origin === 'stored' ? { ...result, origin: 'moved' } : result;
+      }
+      try {
+        return { data: parseAppDataJson(raw), origin: 'stored' };
+      } catch (e) {
+        if (e instanceof DataFormatError) {
+          // Keep the broken copy so nothing is lost when the app saves fresh data over the key.
+          await kv.set(`${IDB_DATA_KEY}.corrupt-${Date.now()}`, raw).catch(() => {});
+        }
+        throw e;
+      }
+    },
+
+    async save(data) {
+      if (fallback) return fallback.save(data);
+      try {
+        await kv.set(IDB_DATA_KEY, JSON.stringify(data));
       } catch (e) {
         throw new StorageError(
           'Could not save: browser storage is full or blocked. ' +
@@ -131,10 +190,28 @@ function availableLocalStorage(win: Window): Storage | null {
   }
 }
 
-/** Picks the store for the current environment: shell bridge, browser storage, or memory. */
+function availableIndexedDb(win: Window): IDBFactory | null {
+  try {
+    return win.indexedDB ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** Browser storage: IndexedDB, else localStorage, else memory only. */
+export function createBrowserDataStore(
+  win: Window,
+  storage: Storage | null = availableLocalStorage(win),
+): DataStore {
+  const local = storage ? createBrowserStore(storage) : null;
+  const idb = availableIndexedDb(win);
+  if (idb) return createIndexedDbStore(createIdbKeyValue(idb), local);
+  return local ?? createMemoryStore();
+}
+
+/** Picks the store for the current environment: shell bridge or browser storage. */
 export function createDataStore(win: Window = window): DataStore {
   const webview = getWebView(win);
   if (webview) return createShellStore(createBridgeClient(createWebViewTransport(webview)));
-  const storage = availableLocalStorage(win);
-  return storage ? createBrowserStore(storage) : createMemoryStore();
+  return createBrowserDataStore(win);
 }

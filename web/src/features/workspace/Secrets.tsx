@@ -99,7 +99,7 @@ export function Secrets() {
   const [invalid, setInvalid] = useState(false);
   const [revealed, setRevealed] = useState<ReadonlySet<string>>(new Set());
   const [editing, setEditing] = useState<string | null>(null);
-  const where = platform.kind === 'shell' ? 'в файле data.json' : 'в браузере (localStorage)';
+  const where = platform.kind === 'shell' ? 'в файле data.json' : 'в браузере (IndexedDB)';
 
   const toggle = (id: string) =>
     setRevealed((prev) => {

@@ -61,6 +61,8 @@ export function setDescription(d: AppData, id: string, description: string) {
 /** F-96: details live inside the task and go away with it. */
 export function deleteTask(d: AppData, id: string) {
   d.tasks = d.tasks.filter((t) => t.id !== id);
+  // Notes stay; only their link to the deleted task goes away.
+  for (const note of d.notes) note.taskIds = note.taskIds.filter((t) => t !== id);
 }
 
 /* ---------- Checklist (F-81) ---------- */
@@ -128,10 +130,17 @@ export function removeLink(d: AppData, taskId: string, linkId: string) {
 
 /* ---------- Notes (F-62..F-64) ---------- */
 
-export function addNote(d: AppData, title: string, text: string, id: string, now: number): boolean {
+export function addNote(
+  d: AppData,
+  title: string,
+  text: string,
+  id: string,
+  now: number,
+  folderId: string | null = null,
+): boolean {
   const clean = title.trim();
   if (!clean) return false;
-  d.notes.push({ id, title: clean, text, createdAt: now, updatedAt: now });
+  d.notes.push({ id, title: clean, text, folderId, taskIds: [], createdAt: now, updatedAt: now });
   return true;
 }
 

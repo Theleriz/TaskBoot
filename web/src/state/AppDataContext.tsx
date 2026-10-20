@@ -50,8 +50,8 @@ export function AppDataProvider({ store, children }: { store: DataStore; childre
           readOnly: false,
           notice: result.origin === 'legacy' ? 'Данные перенесены из прежней веб-версии.' : null,
         });
-        // Save once so migrated or imported data is written in the current format.
-        dirty.current = result.origin === 'legacy';
+        // Save once so migrated or imported data is written in the current format and store.
+        dirty.current = result.origin === 'legacy' || result.origin === 'moved';
       },
       (error: unknown) => {
         if (cancelled) return;
@@ -85,10 +85,17 @@ export function AppDataProvider({ store, children }: { store: DataStore; childre
       await store.save(latest.current);
     };
     const onPageHide = () => void flush().catch(() => {});
+    // IndexedDB writes are asynchronous, so start them when the page is hidden: that comes before
+    // pagehide and leaves the browser time to finish the write when a tab is closed.
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') onPageHide();
+    };
     window.addEventListener('pagehide', onPageHide);
+    document.addEventListener('visibilitychange', onVisibility);
     const offClosing = platform.onClosing(flush);
     return () => {
       window.removeEventListener('pagehide', onPageHide);
+      document.removeEventListener('visibilitychange', onVisibility);
       offClosing();
     };
   }, [store, readOnly, platform]);

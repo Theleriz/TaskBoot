@@ -1,8 +1,10 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { IDBFactory } from 'fake-indexeddb';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from './App.tsx';
-import { BROWSER_DATA_KEY } from './data/store.ts';
+import { createIdbKeyValue } from './data/idb.ts';
+import { BROWSER_DATA_KEY, IDB_DATA_KEY } from './data/store.ts';
 import { LEGACY_KEYS } from './data/legacy.ts';
 import { createEnvironment } from './platform/platform.ts';
 import { TABS } from './tabs.ts';
@@ -17,6 +19,10 @@ const zone = (name: string) =>
 beforeEach(() => {
   localStorage.clear();
   document.documentElement.removeAttribute('style');
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
 
 describe('App', () => {
@@ -82,6 +88,21 @@ describe('App', () => {
     renderApp();
     expect(await screen.findByText('Из старой версии')).toBeInTheDocument();
     expect(screen.getByText('Данные перенесены из прежней веб-версии.')).toBeInTheDocument();
+  });
+
+  it('moves v2.0 data from localStorage into IndexedDB on first start', async () => {
+    const factory = new IDBFactory();
+    vi.stubGlobal('indexedDB', factory);
+    const v1 = JSON.stringify({ schemaVersion: 1, tasks: [{ id: 'x', title: 'Из v2.0' }] });
+    localStorage.setItem(BROWSER_DATA_KEY, v1);
+
+    renderApp();
+    expect(await screen.findByText('Из v2.0')).toBeInTheDocument();
+    expect(screen.queryByText('Данные перенесены из прежней веб-версии.')).toBeNull();
+
+    const kv = createIdbKeyValue(factory);
+    await waitFor(async () => expect(await kv.get(IDB_DATA_KEY)).toContain('Из v2.0'));
+    expect(localStorage.getItem(BROWSER_DATA_KEY)).toBe(v1);
   });
 
   it('switches the theme from settings', async () => {
