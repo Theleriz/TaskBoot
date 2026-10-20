@@ -8,3 +8,8 @@ export const TABS = [
 ] as const;
 
 export type TabId = (typeof TABS)[number]['id'];
+
+/** The gear in the top-right corner opens settings; it is a view, not one of the main tabs. */
+export type ViewId = TabId | 'settings';
+
+export const VIEW_IDS: readonly ViewId[] = [...TABS.map((t) => t.id), 'settings'];
