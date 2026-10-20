@@ -36,7 +36,8 @@
 
   <!-- The built web app (web/dist) is copied next to the exe and served from https://app.local. -->
   <ItemGroup>
-    <Content Include="..\web\dist\**\*" Exclude="..\web\dist\**\*.map" Link="web\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\web\dist\**\*" Exclude="..\web\dist\**\*.map;..\web\dist\THIRD_PARTY_NOTICES.md" Link="web\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\THIRD_PARTY_NOTICES.md" Link="THIRD_PARTY_NOTICES.md" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4258.31" />

@@ -47,6 +47,8 @@ jobs:
       - name: Build web app and shell
         shell: cmd
         run: win32\build.cmd
+      - name: Third-party notices are up to date
+        run: node tools/third-party-notices.mjs --check
       - uses: actions/upload-artifact@v4
         with:
           name: TaskTracker-windows-${{ github.sha }}

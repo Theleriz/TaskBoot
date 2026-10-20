@@ -12,7 +12,8 @@ Hybrid architecture: the web app is the primary codebase, and the Windows app is
 | `web/legacy/` | Previous single-file web version (`index.html`), kept until the new web app reaches parity. |
 | `win32/` | Windows app: a WPF + WebView2 shell (.NET Framework 4.8) that hosts the web app. Build instructions: [win32/README.md](win32/README.md). |
 | `docs/specs/` | Product specs (in Russian). |
-| `docs/` | [Roadmap](docs/roadmap.md), [phase 0 plan](docs/phase-0.md), [secrets policy](docs/secrets-policy.md). |
+| `docs/` | [Architecture](docs/architecture.md), [bridge protocol](docs/bridge-protocol.md), [roadmap](docs/roadmap.md), [phase 0 plan](docs/phase-0.md), [secrets policy](docs/secrets-policy.md) (in Russian, except the secrets policy). |
+| `tools/` | `third-party-notices.mjs` — generates [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). |
 
 The tag `wpf-legacy` marks the last commit with the full standalone WPF interface.
 
@@ -32,4 +33,4 @@ The tag `wpf-legacy` marks the last commit with the full standalone WPF interfac
 ## Rules
 
 - Never commit secrets, keys, `.env.local` or AI-agent context; see [docs/secrets-policy.md](docs/secrets-policy.md).
-- External dependencies follow spec section 4.1 (permissive licenses, pinned versions, offline-first).
+- External dependencies follow spec section 4.1 (permissive licenses, pinned versions, offline-first). After adding or updating one, regenerate the notices: `node tools/third-party-notices.mjs` (CI fails if the file is out of date).

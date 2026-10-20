@@ -42,6 +42,9 @@ jobs:
         shell: cmd
         run: win32\build.cmd
 
+      - name: Third-party notices are up to date
+        run: node tools/third-party-notices.mjs --check
+
       - name: Package
         shell: pwsh
         run: |

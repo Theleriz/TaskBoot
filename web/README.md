@@ -46,4 +46,4 @@ npm ci
 
 ## Dependencies
 
-Versions are pinned (`.npmrc` has `save-exact=true`; `package-lock.json` is committed). New dependencies must follow spec section 4.1 (permissive license, actively maintained, no telemetry). Only `react`, `react-dom` and `scheduler` (MIT) are shipped in the build; everything else is development tooling.
+Versions are pinned (`.npmrc` has `save-exact=true`; `package-lock.json` is committed). New dependencies must follow spec section 4.1 (permissive license, actively maintained, no telemetry). Only `react`, `react-dom` and `scheduler` (MIT) are shipped in the build; everything else is development tooling. The build includes `THIRD_PARTY_NOTICES.md` from the repository root; regenerate it with `node tools/third-party-notices.mjs` after dependency changes.
