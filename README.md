@@ -32,5 +32,6 @@ The tag `wpf-legacy` marks the last commit with the full standalone WPF interfac
 
 ## Rules
 
+- **`main` is always working**: every change goes through a branch and a pull request with green CI; new features are first released from their branch as a beta / pre-release; bug fixes come with a test. Direct pushes to `main` only for urgent security fixes (leaked secrets or user data) or by the main developer. Full rules (in Russian): [CONTRIBUTING.md](CONTRIBUTING.md).
 - Never commit secrets, keys, `.env.local` or AI-agent context; see [docs/secrets-policy.md](docs/secrets-policy.md).
 - External dependencies follow spec section 4.1 (permissive licenses, pinned versions, offline-first). After adding or updating one, regenerate the notices: `node tools/third-party-notices.mjs` (CI fails if the file is out of date).
