@@ -21,6 +21,8 @@ export interface BridgeMethods {
   'window.theme': { payload: { dark: boolean }; result: null };
   /** Opens an http(s) link in the default browser instead of inside the shell. */
   'shell.openExternal': { payload: { url: string }; result: null };
+  /** Answer to the `app.closing` event: pending data is saved, the window may close. */
+  'app.readyToClose': { payload: null; result: null };
   /** Shell version, to show in settings and to detect available features. */
   'app.info': { payload: null; result: { version: string; platform: 'windows' } };
 }
@@ -31,6 +33,8 @@ export type BridgeMethod = keyof BridgeMethods;
 export interface BridgeEvents {
   /** The user clicked a notification or the tray icon; the window is shown again. */
   'app.activated': null;
+  /** The window is about to close: save pending changes, then call `app.readyToClose`. */
+  'app.closing': null;
 }
 
 export type BridgeEvent = keyof BridgeEvents;

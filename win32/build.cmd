@@ -1,21 +1,48 @@
 @echo off
-rem Builds Task Tracker with the C# compiler that ships with Windows (.NET Framework 4.8).
-rem Nothing needs to be installed. Output: bin\TaskTracker.exe
+rem Builds Task Tracker for Windows: the web app (..\web) and the WebView2 shell (this folder).
+rem Requirements: Node.js 22.12+ and .NET SDK 8 or newer.
+rem Usage: build.cmd [output folder]   (default: dist\TaskTracker)
 setlocal
 cd /d "%~dp0"
+set "DOTNET_CLI_TELEMETRY_OPTOUT=1"
+set "DOTNET_NOLOGO=1"
 
-set "FW=%WINDIR%\Microsoft.NET\Framework64\v4.0.30319"
-if not exist "%FW%\csc.exe" set "FW=%WINDIR%\Microsoft.NET\Framework\v4.0.30319"
-if not exist "%FW%\csc.exe" (
-  echo csc.exe from .NET Framework 4.x was not found
+set "OUT=%~1"
+if "%OUT%"=="" set "OUT=dist\TaskTracker"
+
+where npm >nul 2>nul
+if errorlevel 1 (
+  echo npm was not found. Install Node.js 22.12 or newer.
   exit /b 1
 )
 
-set "OUT=%~1"
-if "%OUT%"=="" set "OUT=bin\TaskTracker.exe"
-if not exist bin mkdir bin
+set "DOTNET="
+for %%I in (dotnet.exe) do set "DOTNET=%%~$PATH:I"
+if not defined DOTNET if exist "%ProgramFiles%\dotnet\dotnet.exe" set "DOTNET=%ProgramFiles%\dotnet\dotnet.exe"
+if not defined DOTNET (
+  echo .NET SDK was not found. Install it, for example: winget install Microsoft.DotNet.SDK.10
+  exit /b 1
+)
 
-"%FW%\csc.exe" /nologo /target:winexe /optimize+ /codepage:65001 /out:"%OUT%" /win32manifest:app.manifest /win32icon:app.ico /r:"%FW%\WPF\PresentationCore.dll" /r:"%FW%\WPF\PresentationFramework.dll" /r:"%FW%\WPF\WindowsBase.dll" /r:"%FW%\System.Xaml.dll" /r:"%FW%\System.Web.Extensions.dll" /r:"%FW%\System.Windows.Forms.dll" /r:"%FW%\System.Drawing.dll" src\*.cs
+echo === Web app
+pushd ..\web
+if not exist node_modules (
+  call npm ci
+  if errorlevel 1 goto :fail_web
+)
+call npm run build
+if errorlevel 1 goto :fail_web
+popd
+
+echo === Windows shell
+"%DOTNET%" publish TaskTracker.csproj -c Release -o "%OUT%"
 if errorlevel 1 exit /b 1
 
-echo Built: %OUT%
+echo.
+echo Built: %OUT%\TaskTracker.exe
+exit /b 0
+
+:fail_web
+popd
+echo Web build failed.
+exit /b 1

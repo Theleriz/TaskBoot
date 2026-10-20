@@ -24,6 +24,11 @@ export interface Platform {
   openExternal(url: string): void;
   /** The user came back via a notification or the tray icon. */
   onActivated(handler: () => void): () => void;
+  /**
+   * The window is closing: `handler` saves pending changes. In the shell the window waits for it
+   * (up to 2 s); in a browser `pagehide` is used instead and this never fires.
+   */
+  onClosing(handler: () => Promise<void>): () => void;
 }
 
 function browserPlatform(win: Window): Platform {
@@ -65,6 +70,9 @@ function browserPlatform(win: Window): Platform {
       win.addEventListener('focus', handler);
       return () => win.removeEventListener('focus', handler);
     },
+    onClosing() {
+      return () => {};
+    },
   };
 }
 
@@ -96,6 +104,13 @@ function shellPlatform(bridge: BridgeClient, win: Window): Platform {
     },
     onActivated(handler) {
       return bridge.on('app.activated', handler);
+    },
+    onClosing(handler) {
+      return bridge.on('app.closing', () => {
+        void handler()
+          .catch(() => {})
+          .finally(() => send(bridge.request('app.readyToClose', null)));
+      });
     },
   };
 }

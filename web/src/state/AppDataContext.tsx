@@ -5,6 +5,7 @@ import type { AppData } from '../data/model.ts';
 import { createEmptyData } from '../data/normalize.ts';
 import type { DataStore } from '../data/store.ts';
 import { type AppDataApi, type LoadState, AppDataContext } from './contexts.ts';
+import { usePlatform } from './hooks.ts';
 
 const SAVE_DELAY_MS = 300;
 
@@ -33,6 +34,7 @@ export function AppDataProvider({ store, children }: { store: DataStore; childre
   const [data, setData] = useState<AppData>(createEmptyData);
   const [load, setLoad] = useState<LoadState>({ kind: 'loading' });
   const [saveError, setSaveError] = useState<string | null>(null);
+  const platform = usePlatform();
   const dirty = useRef(false);
   const latest = useRef(data);
   const readOnly = load.kind === 'ready' && load.readOnly;
@@ -75,16 +77,21 @@ export function AppDataProvider({ store, children }: { store: DataStore; childre
     return () => clearTimeout(timer);
   }, [data, store, readOnly, load.kind]);
 
-  // Do not lose the last edit when the page closes during the save delay.
+  // Do not lose the last edit when the page or the shell window closes during the save delay.
   useEffect(() => {
-    const flush = () => {
+    const flush = async () => {
       if (!dirty.current || readOnly) return;
       dirty.current = false;
-      void store.save(latest.current).catch(() => {});
+      await store.save(latest.current);
     };
-    window.addEventListener('pagehide', flush);
-    return () => window.removeEventListener('pagehide', flush);
-  }, [store, readOnly]);
+    const onPageHide = () => void flush().catch(() => {});
+    window.addEventListener('pagehide', onPageHide);
+    const offClosing = platform.onClosing(flush);
+    return () => {
+      window.removeEventListener('pagehide', onPageHide);
+      offClosing();
+    };
+  }, [store, readOnly, platform]);
 
   const apply = useCallback((recipe: (draft: AppData) => void) => {
     dirty.current = true;

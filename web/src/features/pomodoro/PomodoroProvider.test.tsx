@@ -20,6 +20,7 @@ const platform: Platform = {
   setWindowDark: () => {},
   openExternal: () => {},
   onActivated: () => () => {},
+  onClosing: () => () => {},
 };
 
 let api: PomodoroApi | null = null;

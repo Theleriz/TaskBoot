@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Windows shell for the Task Tracker web app (phase 0.5).
+    .NET Framework 4.8 is part of Windows 10/11, so the app runs without installing anything;
+    WebView2 Runtime ships with Windows 11 (and is installed on most Windows 10 machines).
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <AssemblyName>TaskTracker</AssemblyName>
+    <RootNamespace>TaskTracker</RootNamespace>
+    <ApplicationIcon>app.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+    <Version>0.5.0</Version>
+    <Product>Task Tracker</Product>
+    <AssemblyTitle>Task Tracker</AssemblyTitle>
+    <Copyright></Copyright>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- D-02: restore from the lock file in CI. -->
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Web.Extensions" />
+  </ItemGroup>
+
+  <!-- The built web app (web/dist) is copied next to the exe and served from https://app.local. -->
+  <ItemGroup>
+    <Content Include="..\web\dist\**\*" Exclude="..\web\dist\**\*.map" Link="web\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4258.31" />
+  </ItemGroup>
+
+</Project>
