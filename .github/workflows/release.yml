@@ -59,5 +59,7 @@ jobs:
           TAG: ${{ github.ref_name }}
         run: |
           $v = $env:TASKTRACKER_VERSION
+          # Tags with a suffix (v2.1.0-beta.1, v2.1.0-rc.1) are pre-releases (docs/versioning.md).
+          $pre = if ($v.Contains('-')) { @('--prerelease') } else { @() }
           gh release create $env:TAG "TaskTracker-$v-windows.zip" "TaskTracker-$v-web.zip" `
-            --title "Task Tracker $v" --generate-notes
+            --title "Task Tracker $v" --generate-notes @pre
