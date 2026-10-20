@@ -45,14 +45,23 @@ const theme = EditorView.theme({
   '.cm-placeholder': { color: 'var(--muted)' },
 });
 
+/** A place in the text to select and scroll to, e.g. a search match. A new object jumps again. */
+export interface Jump {
+  from: number;
+  to: number;
+}
+
 export default function NoteEditor({
   initialText,
   onChange,
+  jump = null,
 }: {
   initialText: string;
   onChange: (text: string) => void;
+  jump?: Jump | null;
 }) {
   const host = useRef<HTMLDivElement>(null);
+  const view = useRef<EditorView | null>(null);
   const changed = useRef(onChange);
   const [initial] = useState(initialText);
 
@@ -63,7 +72,7 @@ export default function NoteEditor({
   useEffect(() => {
     const parent = host.current;
     if (!parent) return;
-    const view = new EditorView({
+    const editor = new EditorView({
       parent,
       state: EditorState.create({
         doc: initial,
@@ -83,8 +92,25 @@ export default function NoteEditor({
         ],
       }),
     });
-    return () => view.destroy();
+    view.current = editor;
+    return () => {
+      view.current = null;
+      editor.destroy();
+    };
   }, [initial]);
+
+  useEffect(() => {
+    const editor = view.current;
+    if (!editor || !jump) return;
+    const length = editor.state.doc.length;
+    const from = Math.min(jump.from, length);
+    const to = Math.min(jump.to, length);
+    editor.dispatch({
+      selection: { anchor: from, head: to },
+      effects: EditorView.scrollIntoView(from, { y: 'center' }),
+    });
+    editor.focus();
+  }, [jump]);
 
   return <div className="note-editor" ref={host} />;
 }

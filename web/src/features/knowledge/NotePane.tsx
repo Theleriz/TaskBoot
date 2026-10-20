@@ -4,6 +4,7 @@ import { useAppData } from '../../state/hooks.ts';
 import { deleteNote, moveNote, renameNote, setNoteText } from '../../state/ops.ts';
 import { IconButton } from '../../ui/Icon.tsx';
 import { formatDate } from '../../ui/format.ts';
+import type { Jump } from './NoteEditor.tsx';
 import { NOTE_MODES, type NoteMode } from './modes.ts';
 import { folderOptions } from './tree.ts';
 
@@ -19,12 +20,15 @@ export function NotePane({
   onMode,
   onDeleted,
   focusTitle = false,
+  jump = null,
 }: {
   note: Note;
   mode: NoteMode;
   onMode: (mode: NoteMode) => void;
   onDeleted: () => void;
   focusTitle?: boolean;
+  /** Search match to show in the editor. */
+  jump?: Jump | null;
 }) {
   const { data, apply } = useAppData();
   const [title, setTitle] = useState(note.title);
@@ -113,6 +117,7 @@ export function NotePane({
           <Suspense fallback={<div className="note-loading">Загрузка редактора…</div>}>
             <NoteEditor
               initialText={note.text}
+              jump={jump}
               onChange={(text) => {
                 const now = Date.now();
                 apply((d) => setNoteText(d, note.id, text, now));

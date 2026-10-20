@@ -134,3 +134,55 @@ describe('knowledge space', () => {
     expect(openExternal).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('search', () => {
+  const stored = {
+    schemaVersion: 2,
+    folders: [{ id: 'f', name: 'Работа', parentId: null }],
+    notes: [
+      { id: 'n1', title: 'План', text: 'Первая строка\nсдать отчёт по ёлкам', folderId: 'f' },
+      { id: 'n2', title: 'Почта', text: 'ivan@example.com' },
+    ],
+  };
+  const results = () => screen.findByRole('region', { name: 'Результаты поиска' });
+
+  it('finds notes by words and shows the match in the editor', async () => {
+    const user = userEvent.setup();
+    renderSpace(stored);
+    await loaded();
+    await user.type(screen.getByLabelText('Поиск по заметкам'), 'елкам');
+
+    const list = await results();
+    expect(await within(list).findByText('Найдено заметок: 1')).toBeInTheDocument();
+    expect(within(list).getByText('Работа')).toBeInTheDocument();
+    expect(within(list).getByText('ёлкам', { selector: 'mark' })).toBeInTheDocument();
+
+    await user.click(within(list).getByRole('button', { name: /сдать отчёт/ }));
+    const content = await screen.findByLabelText('Текст заметки');
+    const view = EditorView.findFromDOM(content);
+    const { from, to } = view!.state.selection.main;
+    expect(view!.state.sliceDoc(from, to)).toBe('ёлкам');
+
+    // Escape clears the search and brings the tree back.
+    await user.type(screen.getByLabelText('Поиск по заметкам'), '{Escape}');
+    expect(await loaded()).toBeInTheDocument();
+  });
+
+  it('searches by regular expression and explains broken patterns', async () => {
+    const user = userEvent.setup();
+    renderSpace(stored);
+    await loaded();
+    await user.click(screen.getByRole('button', { name: 'Регулярное выражение' }));
+    const input = screen.getByLabelText('Поиск по заметкам');
+
+    await user.type(input, '\\w+@\\w+');
+    const list = await results();
+    expect(await within(list).findByText('ivan@example', { selector: 'mark' })).toBeInTheDocument();
+
+    await user.clear(input);
+    await user.type(input, '[[');
+    expect(
+      await within(await results()).findByText(/Неверное регулярное выражение/),
+    ).toBeInTheDocument();
+  });
+});
