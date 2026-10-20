@@ -577,9 +577,9 @@ main {
 /* ---------- Пространство ---------- */
 .space {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(220px, 300px) minmax(0, 1fr);
   gap: 16px;
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 18px auto 16px;
   align-items: start;
 }
@@ -631,52 +631,278 @@ main {
   list-style: none;
 }
 
-.note-row {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 2px 12px;
-  width: 100%;
-  text-align: left;
-  background: var(--card);
-  border: 1px solid var(--border);
+.spacer {
+  flex: 1;
+}
+
+/* Дерево папок и заметок */
+.space-side {
+  position: sticky;
+  top: 0;
+  padding: 12px 8px;
+  max-height: calc(100vh - 90px);
+  display: flex;
+  flex-direction: column;
+}
+.space-side .box-head {
+  padding: 0 6px;
+  gap: 6px;
+}
+.tree {
+  flex: 1;
+  min-height: 60px;
+  overflow: auto;
   border-radius: 8px;
-  padding: 9px 12px;
+  padding-bottom: 12px;
+}
+.tree.drop {
+  background: var(--accent-soft);
+}
+.tree-level {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.tree-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  border-radius: 6px;
+  padding-right: 4px;
+}
+.tree-row:hover {
+  background: var(--hover);
+}
+.tree-row.drop {
+  background: var(--accent-soft);
+  outline: 1px dashed var(--accent);
+}
+.tree-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  padding: 6px 4px;
+  text-align: left;
   cursor: pointer;
-  transition:
-    background 0.12s,
-    border-color 0.12s;
 }
-.note-row:hover {
-  background: var(--card-hover);
-  border-color: var(--border-strong);
+button.tree-row {
+  width: 100%;
+  padding-right: 8px;
 }
-.note-title {
+.tree-row.note[aria-current='true'],
+.secrets-link[aria-current='true'] {
+  background: var(--accent-soft);
+  color: var(--accent);
   font-weight: 600;
-  overflow-wrap: anywhere;
 }
-.note-date {
-  color: var(--muted);
-  font-size: 12px;
-  white-space: nowrap;
-}
-.note-preview {
-  grid-column: 1 / -1;
-  color: var(--muted);
-  font-size: 13px;
-  white-space: nowrap;
+.tree-name {
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.note-edit {
-  display: grid;
+.tree-chevron {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  flex: none;
+  color: var(--muted);
+  transition: transform 0.12s;
+}
+.tree-chevron .icon {
+  width: 14px;
+  height: 14px;
+}
+.tree-chevron.open {
+  transform: rotate(90deg);
+}
+.tree-row > .icon,
+.tree-label > .icon {
+  color: var(--muted);
+}
+.tree-actions {
+  display: flex;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.tree-row:hover .tree-actions,
+.tree-row:focus-within .tree-actions {
+  opacity: 1;
+}
+.tree-actions .icon-btn {
+  width: 24px;
+  height: 24px;
+}
+.tree-rename {
+  flex: 1;
+  min-width: 0;
+  padding: 3px 8px;
+}
+.secrets-link {
+  margin-top: 8px;
+  border-top: 1px solid var(--border);
+  border-radius: 0 0 6px 6px;
+  padding: 8px 10px;
+}
+
+/* Заметка */
+.space-main {
+  min-width: 0;
+}
+.space-empty p {
+  margin: 0 0 8px;
+}
+.space-empty .row {
+  margin-top: 14px;
+}
+.note-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.note-head {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.note-title-input {
+  flex: 1;
+  min-width: 200px;
+  font-size: 18px;
+  font-weight: 600;
+  border-color: transparent;
+  background: transparent;
+  padding: 4px 8px;
+}
+.note-meta {
+  font-size: 13px;
+}
+.note-folder {
+  display: flex;
+  align-items: center;
   gap: 8px;
-  background: var(--card);
-  border: 1px solid var(--accent);
-  border-radius: 8px;
-  padding: 10px;
 }
-.note-edit .textarea {
-  min-height: 140px;
+.note-folder .select {
+  width: auto;
+  max-width: 280px;
+  padding: 4px 8px;
+}
+.note-body {
+  display: grid;
+  gap: 12px;
+  min-height: calc(100vh - 250px);
+}
+.note-body.mode-split {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+.note-editor,
+.md,
+.note-loading {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  padding: 0 12px;
+}
+.note-editor {
+  display: flex;
+}
+.note-editor .cm-editor {
+  flex: 1;
+  min-width: 0;
+}
+.note-editor:focus-within {
+  border-color: var(--accent);
+}
+.note-loading,
+.md-empty {
+  padding: 12px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* Просмотр Markdown */
+.md {
+  padding: 4px 16px;
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+}
+.md h1,
+.md h2,
+.md h3,
+.md h4 {
+  margin: 16px 0 8px;
+  line-height: 1.3;
+}
+.md h1 {
+  font-size: 24px;
+}
+.md h2 {
+  font-size: 20px;
+}
+.md h3 {
+  font-size: 17px;
+}
+.md p,
+.md ul,
+.md ol,
+.md blockquote,
+.md pre,
+.md table {
+  margin: 8px 0;
+}
+.md a {
+  color: var(--accent);
+}
+.md blockquote {
+  border-left: 3px solid var(--border-strong);
+  padding-left: 12px;
+  color: var(--muted);
+}
+.md code {
+  font-family: 'Cascadia Mono', Consolas, ui-monospace, monospace;
+  font-size: 0.92em;
+  background: var(--surface-2);
+  border-radius: 4px;
+  padding: 1px 4px;
+}
+.md pre {
+  background: var(--surface-2);
+  border-radius: 8px;
+  padding: 10px 12px;
+  overflow-x: auto;
+}
+.md pre code {
+  background: none;
+  padding: 0;
+}
+.md table {
+  border-collapse: collapse;
+  display: block;
+  overflow-x: auto;
+}
+.md th,
+.md td {
+  border: 1px solid var(--border);
+  padding: 4px 10px;
+}
+.md hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+.md .math-block {
+  overflow-x: auto;
+}
+.md .katex-error,
+.md .math-error {
+  color: var(--danger) !important;
 }
 
 .secret {
@@ -982,8 +1208,19 @@ main {
     overflow: visible;
   }
   .timers,
-  .space {
+  .space,
+  .note-body.mode-split {
     grid-template-columns: 1fr;
+  }
+  .space-side {
+    position: static;
+    max-height: none;
+  }
+  .note-body {
+    min-height: 50vh;
+  }
+  .tree-actions {
+    opacity: 1;
   }
   .t-time {
     font-size: 60px;

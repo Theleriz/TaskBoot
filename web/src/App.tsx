@@ -105,7 +105,7 @@ function Shell({ prefs }: { prefs: Storage | null }) {
         )}
         {view === 'space' && (
           <section className="view scroll" role="tabpanel" aria-label="Пространство">
-            <WorkspaceView />
+            <WorkspaceView prefs={prefs} />
           </section>
         )}
         {view === 'settings' && (

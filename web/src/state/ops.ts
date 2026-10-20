@@ -140,7 +140,16 @@ export function addNote(
 ): boolean {
   const clean = title.trim();
   if (!clean) return false;
-  d.notes.push({ id, title: clean, text, folderId, taskIds: [], createdAt: now, updatedAt: now });
+  const folder = folderId !== null && findFolder(d, folderId) ? folderId : null;
+  d.notes.push({
+    id,
+    title: clean,
+    text,
+    folderId: folder,
+    taskIds: [],
+    createdAt: now,
+    updatedAt: now,
+  });
   return true;
 }
 
@@ -160,8 +169,90 @@ export function updateNote(
   return true;
 }
 
+/** Edits from the knowledge-space editor; an unchanged text keeps updatedAt. */
+export function setNoteText(d: AppData, id: string, text: string, now: number) {
+  const note = d.notes.find((n) => n.id === id);
+  if (!note || note.text === text) return;
+  note.text = text;
+  note.updatedAt = now;
+}
+
+export function renameNote(d: AppData, id: string, title: string, now: number): boolean {
+  const note = d.notes.find((n) => n.id === id);
+  const clean = title.trim();
+  if (!note || !clean) return false;
+  if (note.title !== clean) {
+    note.title = clean;
+    note.updatedAt = now;
+  }
+  return true;
+}
+
+/** `folderId: null` moves the note to the root. */
+export function moveNote(d: AppData, id: string, folderId: string | null): boolean {
+  const note = d.notes.find((n) => n.id === id);
+  if (!note || (folderId !== null && !findFolder(d, folderId))) return false;
+  note.folderId = folderId;
+  return true;
+}
+
 export function deleteNote(d: AppData, id: string) {
   d.notes = d.notes.filter((n) => n.id !== id);
+}
+
+/* ---------- Folders (knowledge space, phase 1.2) ---------- */
+
+export const findFolder = (d: AppData, id: string) => d.folders.find((f) => f.id === id);
+
+/** True when `folderId` is `ancestorId` itself or lies somewhere inside it. */
+export function isInsideFolder(d: AppData, folderId: string | null, ancestorId: string): boolean {
+  // The tree is acyclic after normalization; the counter guards against a broken draft anyway.
+  for (let id = folderId, steps = 0; id !== null && steps <= d.folders.length; steps++) {
+    if (id === ancestorId) return true;
+    id = findFolder(d, id)?.parentId ?? null;
+  }
+  return false;
+}
+
+export function addFolder(
+  d: AppData,
+  name: string,
+  id: string,
+  now: number,
+  parentId: string | null = null,
+): boolean {
+  const clean = name.trim();
+  if (!clean || (parentId !== null && !findFolder(d, parentId))) return false;
+  d.folders.push({ id, name: clean, parentId, createdAt: now });
+  return true;
+}
+
+export function renameFolder(d: AppData, id: string, name: string): boolean {
+  const folder = findFolder(d, id);
+  const clean = name.trim();
+  if (!folder || !clean) return false;
+  folder.name = clean;
+  return true;
+}
+
+/** Refuses to move a folder into itself or into one of its subfolders. */
+export function moveFolder(d: AppData, id: string, parentId: string | null): boolean {
+  const folder = findFolder(d, id);
+  if (!folder) return false;
+  if (parentId !== null && (!findFolder(d, parentId) || isInsideFolder(d, parentId, id))) {
+    return false;
+  }
+  folder.parentId = parentId;
+  return true;
+}
+
+/** Nothing inside is lost: subfolders and notes move up to the parent of the deleted folder. */
+export function deleteFolder(d: AppData, id: string) {
+  const folder = findFolder(d, id);
+  if (!folder) return;
+  for (const f of d.folders) if (f.parentId === id) f.parentId = folder.parentId;
+  for (const n of d.notes) if (n.folderId === id) n.folderId = folder.parentId;
+  d.folders = d.folders.filter((f) => f.id !== id);
 }
 
 /* ---------- Secrets (F-65..F-67) ---------- */
