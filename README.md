@@ -2,6 +2,8 @@
 
 Personal productivity app: Eisenhower matrix, Kanban board, Pomodoro timer and a workspace for notes, with one shared set of tasks. The interface is in Russian.
 
+**Open the web app:** https://theleriz.github.io/TaskBoot/ · **Download for Windows:** [latest release](https://github.com/Theleriz/TaskBoot/releases/latest)
+
 Hybrid architecture: the web app is the primary codebase, and the Windows app is a thin WebView2 shell around it. See [docs/phase-0.md](docs/phase-0.md).
 
 ## Repository layout
@@ -27,8 +29,9 @@ The tag `wpf-legacy` marks the last commit with the full standalone WPF interfac
 
 - **CI** (`.github/workflows/ci.yml`) runs on every push to `main` and on pull requests: web type check, lint, format check, tests and build; Windows shell build and package (downloadable as a workflow artifact).
 - **Release** (`release.yml`): push a tag such as `v2.1.0` (which digit to bump: [docs/versioning.md](docs/versioning.md); tags with a suffix like `-beta.1` become pre-releases). The workflow builds both versions and creates a GitHub Release with `TaskTracker-<version>-windows.zip` (unzip and run `TaskTracker.exe`) and `TaskTracker-<version>-web.zip`.
-- **GitHub Pages** (`pages.yml`): publishes the web app on changes to `web/`. Opt-in: Settings → Pages → Source: GitHub Actions, and the repository variable `DEPLOY_PAGES=true`.
-- **Dependabot** opens weekly update PRs for npm, NuGet and GitHub Actions.
+- **GitHub Pages** (`pages.yml`): publishes the web app to https://theleriz.github.io/TaskBoot/ on every change to `web/` in `main`. Controlled by the repository variable `DEPLOY_PAGES=true` (remove it to pause publishing).
+- **Dependabot** opens weekly update PRs for npm, NuGet and GitHub Actions, plus security-fix PRs for vulnerable dependencies.
+- **Branch protection**: `main` accepts changes only through pull requests with both CI checks green ([CONTRIBUTING.md](CONTRIBUTING.md)).
 
 ## Rules
 
