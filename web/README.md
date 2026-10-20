@@ -42,7 +42,6 @@ npm ci
 | `src/bridge/`             | Messaging with the Windows WebView2 shell; contract in `docs/bridge-protocol.md`                    |
 | `src/styles/`             | Design tokens and app styles                                                                        |
 | `public/`                 | Static files copied as is (icon)                                                                    |
-| `legacy/`                 | Previous single-file version; excluded from lint, format and build                                  |
 
 ## Dependencies
 

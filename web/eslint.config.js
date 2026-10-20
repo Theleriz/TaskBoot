@@ -7,8 +7,7 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default defineConfig([
-  // legacy/ is the old single-file app, kept untouched until the new app reaches parity.
-  globalIgnores(['dist', 'coverage', 'legacy']),
+  globalIgnores(['dist', 'coverage']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [

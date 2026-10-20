@@ -11,19 +11,17 @@ Hybrid architecture: the web app is the primary codebase, and the Windows app is
 | Path | Contents |
 |---|---|
 | `web/` | Web app, the primary codebase: Vite + React + TypeScript. Commands: [web/README.md](web/README.md). |
-| `web/legacy/` | Previous single-file web version (`index.html`), kept until the new web app reaches parity. |
 | `win32/` | Windows app: a WPF + WebView2 shell (.NET Framework 4.8) that hosts the web app. Build instructions: [win32/README.md](win32/README.md). |
 | `docs/specs/` | Product specs (in Russian). |
-| `docs/` | [Architecture](docs/architecture.md), [bridge protocol](docs/bridge-protocol.md), [versioning](docs/versioning.md), [roadmap](docs/roadmap.md), [phase 0 plan](docs/phase-0.md), [secrets policy](docs/secrets-policy.md) (in Russian, except the secrets policy). |
+| `docs/` | [Architecture](docs/architecture.md), [bridge protocol](docs/bridge-protocol.md), [versioning](docs/versioning.md), [roadmap](docs/roadmap.md), [phase 0](docs/phase-0.md) and [phase 1](docs/phase-1.md) plans, [secrets policy](docs/secrets-policy.md) (in Russian, except the secrets policy). |
 | `tools/` | `third-party-notices.mjs` — generates [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). |
 
-The tag `wpf-legacy` marks the last commit with the full standalone WPF interface.
+The tag `wpf-legacy` marks the last commit with the full standalone WPF interface; the tag `v2.0.0` is the last one with the previous single-file web version (`web/legacy/`).
 
 ## Quick start
 
 - **Windows app:** run `win32\build.cmd` (needs Node.js and the .NET SDK), then `win32\dist\TaskTracker\TaskTracker.exe`.
 - **Web app:** `cd web`, `npm ci`, `npm run dev`.
-- **Previous web version:** open `web/legacy/index.html` in a browser.
 
 ## CI and releases
 

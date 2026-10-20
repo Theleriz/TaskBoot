@@ -1,7 +1,7 @@
 import type { AppData } from './model.ts';
 import { parseAppData } from './parse.ts';
 
-/** Keys of the legacy single-file web app (web/legacy). They are only read, never written (N-22). */
+/** Keys of the legacy single-file web app (removed in v2.1.0; last code in tag v2.0.0). They are only read, never written (N-22). */
 export const LEGACY_KEYS = {
   tasks: 'taskTracker.tasks',
   settings: 'taskTracker.settings',
