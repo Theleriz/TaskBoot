@@ -26,6 +26,8 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <!-- D-02: restore from the lock file in CI. -->
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <!-- In CI (GitHub sets CI=true) the restore must match the lock file exactly. -->
+    <RestoreLockedMode Condition="'$(CI)' == 'true'">true</RestoreLockedMode>
   </PropertyGroup>
 
   <ItemGroup>

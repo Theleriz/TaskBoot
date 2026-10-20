@@ -1,7 +1,8 @@
 @echo off
 rem Builds Task Tracker for Windows: the web app (..\web) and the WebView2 shell (this folder).
 rem Requirements: Node.js 22.12+ and .NET SDK 8 or newer.
-rem Usage: build.cmd [output folder]   (default: dist\TaskTracker)
+rem Usage: build.cmd [output folder]   (default: dist\TaskTracker; a zip is made next to it)
+rem Optional: set TASKTRACKER_VERSION=1.2.3 to stamp the version into TaskTracker.exe.
 setlocal
 cd /d "%~dp0"
 set "DOTNET_CLI_TELEMETRY_OPTOUT=1"
@@ -35,11 +36,21 @@ if errorlevel 1 goto :fail_web
 popd
 
 echo === Windows shell
-"%DOTNET%" publish TaskTracker.csproj -c Release -o "%OUT%"
+set "VERSION_ARG="
+if defined TASKTRACKER_VERSION set "VERSION_ARG=-p:Version=%TASKTRACKER_VERSION%"
+if exist "%OUT%" rmdir /s /q "%OUT%"
+"%DOTNET%" publish TaskTracker.csproj -c Release -o "%OUT%" -p:DebugType=None -p:DebugSymbols=false %VERSION_ARG%
+if errorlevel 1 exit /b 1
+
+echo === Package
+set "ZIP=%OUT%.zip"
+if exist "%ZIP%" del /q "%ZIP%"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Compress-Archive -Path '%OUT%\*' -DestinationPath '%ZIP%'"
 if errorlevel 1 exit /b 1
 
 echo.
 echo Built: %OUT%\TaskTracker.exe
+echo Package: %ZIP%
 exit /b 0
 
 :fail_web

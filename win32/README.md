@@ -19,7 +19,7 @@
 win32\build.cmd
 ```
 
-Скрипт собирает веб-приложение (`npm run build` в `web/`) и публикует оболочку в `win32\dist\TaskTracker\` (около 2 МБ). Можно указать другую папку: `build.cmd C:\Temp\TaskTracker`.
+Скрипт собирает веб-приложение (`npm run build` в `web/`), публикует оболочку в `win32\dist\TaskTracker\` (около 2 МБ) и упаковывает её в `win32\dist\TaskTracker.zip` — этот архив можно отправлять людям. Можно указать другую папку: `build.cmd C:\Temp\TaskTracker`. Версию в `.exe` задаёт переменная `TASKTRACKER_VERSION` (например, `0.6.0`); в выпусках на GitHub её берут из тега.
 
 Только оболочка, без пересборки веба: `dotnet build win32\TaskTracker.csproj`.
 

@@ -1,0 +1,20 @@
+# Weekly dependency updates as pull requests (spec D-02: updates land as separate commits).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /web
+    schedule:
+      interval: weekly
+    groups:
+      dev-tooling:
+        dependency-type: development
+
+  - package-ecosystem: nuget
+    directory: /win32
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

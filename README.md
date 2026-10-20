@@ -22,6 +22,13 @@ The tag `wpf-legacy` marks the last commit with the full standalone WPF interfac
 - **Web app:** `cd web`, `npm ci`, `npm run dev`.
 - **Previous web version:** open `web/legacy/index.html` in a browser.
 
+## CI and releases
+
+- **CI** (`.github/workflows/ci.yml`) runs on every push to `main` and on pull requests: web type check, lint, format check, tests and build; Windows shell build and package (downloadable as a workflow artifact).
+- **Release** (`release.yml`): push a tag such as `v0.6.0`. The workflow builds both versions and creates a GitHub Release with `TaskTracker-<version>-windows.zip` (unzip and run `TaskTracker.exe`) and `TaskTracker-<version>-web.zip`.
+- **GitHub Pages** (`pages.yml`): publishes the web app on changes to `web/`. Opt-in: Settings → Pages → Source: GitHub Actions, and the repository variable `DEPLOY_PAGES=true`.
+- **Dependabot** opens weekly update PRs for npm, NuGet and GitHub Actions.
+
 ## Rules
 
 - Never commit secrets, keys, `.env.local` or AI-agent context; see [docs/secrets-policy.md](docs/secrets-policy.md).

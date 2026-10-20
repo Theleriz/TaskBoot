@@ -1,0 +1,60 @@
+name: Release
+
+# Push a tag like v0.6.0 to build and publish a GitHub Release with:
+#   TaskTracker-<version>-windows.zip — the Windows app (unzip and run TaskTracker.exe)
+#   TaskTracker-<version>-web.zip     — the built web app (static files)
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Version from tag
+        shell: pwsh
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          $version = $env:TAG.TrimStart('v')
+          "TASKTRACKER_VERSION=$version" >> $env:GITHUB_ENV
+
+      - name: Check web app
+        working-directory: web
+        run: |
+          npm ci
+          npm run check
+
+      - name: Build web app and shell
+        shell: cmd
+        run: win32\build.cmd
+
+      - name: Package
+        shell: pwsh
+        run: |
+          $v = $env:TASKTRACKER_VERSION
+          Move-Item win32/dist/TaskTracker.zip "TaskTracker-$v-windows.zip"
+          Compress-Archive -Path web/dist/* -DestinationPath "TaskTracker-$v-web.zip"
+
+      - name: Publish release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          $v = $env:TASKTRACKER_VERSION
+          gh release create $env:TAG "TaskTracker-$v-windows.zip" "TaskTracker-$v-web.zip" `
+            --title "Task Tracker $v" --generate-notes
