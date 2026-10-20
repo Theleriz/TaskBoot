@@ -23,6 +23,8 @@
 
 ## Как выпустить версию
 
+Выпуск делается только из `main` с зелёным CI ([CONTRIBUTING.md](../CONTRIBUTING.md)).
+
 1. Решить, какая цифра растёт, по таблице выше.
 2. Записать номер в проект (без `v`):
    - `web/`: `npm version 2.1.0 --no-git-tag-version` — обновит `package.json` и `package-lock.json`;
