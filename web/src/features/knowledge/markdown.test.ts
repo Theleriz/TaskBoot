@@ -84,3 +84,16 @@ describe('formulas', () => {
     expect(html).not.toContain('href="javascript:');
   });
 });
+
+describe('long notes', () => {
+  // GHSA-gfr2-rv44-r23c: an unclosed link reference definition over many lines took quadratic
+  // time in markdown-it 14.1–14.3.2 (about 4 s for 200 KB, 18 s for 400 KB) and froze the preview.
+  it('renders an unclosed link reference definition in linear time', () => {
+    const cases = ['[a]: /u "' + 'x\n'.repeat(100_000), '[' + 'a\n'.repeat(100_000)];
+    for (const text of cases) {
+      const started = performance.now();
+      renderMarkdown(text);
+      expect(performance.now() - started).toBeLessThan(1000);
+    }
+  }, 30_000);
+});
