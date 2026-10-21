@@ -651,7 +651,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 ```
 
-#### markdown-it 14.3.2
+#### markdown-it 14.3.3
 
 License: MIT. Source: markdown-it/markdown-it
 
