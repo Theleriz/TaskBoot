@@ -49,7 +49,7 @@ jobs:
         run: win32\build.cmd
       - name: Third-party notices are up to date
         run: node tools/third-party-notices.mjs --check
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: TaskTracker-windows-${{ github.sha }}
           path: win32/dist/TaskTracker/
