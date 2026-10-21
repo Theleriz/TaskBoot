@@ -5,6 +5,8 @@ import type { Zone } from './zones.ts';
 
 interface Props {
   task: Task;
+  /** Notes linked to the task (phase 1.4). */
+  notes?: number;
   /** Where the task is on the other board (stage in the matrix, quadrant in kanban). */
   other: Zone<string> | undefined;
   dragging: boolean;
@@ -15,7 +17,16 @@ interface Props {
   onDragEnd: (e: DragEvent) => void;
 }
 
-export function Card({ task, other, dragging, onOpen, onDelete, onDragStart, onDragEnd }: Props) {
+export function Card({
+  task,
+  notes = 0,
+  other,
+  dragging,
+  onOpen,
+  onDelete,
+  onDragStart,
+  onDragEnd,
+}: Props) {
   const done = task.checklist.filter((i) => i.done).length;
   const total = task.checklist.length;
 
@@ -61,6 +72,12 @@ export function Card({ task, other, dragging, onOpen, onDelete, onDragStart, onD
             >
               <Icon name="check" />
               {done}/{total}
+            </span>
+          )}
+          {notes > 0 && (
+            <span className="ind" title={`Заметок: ${notes}`}>
+              <Icon name="note" />
+              {notes}
             </span>
           )}
           {task.links.length > 0 && (

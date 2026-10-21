@@ -2,6 +2,7 @@ import { newId } from './ids.ts';
 import {
   type AppData,
   type CheckItem,
+  type Folder,
   type LinkItem,
   type Note,
   type SavedTheme,
@@ -84,15 +85,56 @@ export function normalizeTask(v: unknown, now = Date.now()): Task | null {
   };
 }
 
-function normalizeNote(v: unknown, now: number): Note | null {
+function normalizeFolder(v: unknown, now: number): Folder | null {
+  if (!isRecord(v)) return null;
+  const name = str(v.name).trim();
+  if (!name) return null;
+  const parentId = typeof v.parentId === 'string' && v.parentId ? v.parentId : null;
+  return { id: str(v.id), name, parentId, createdAt: time(v.createdAt, now) };
+}
+
+/**
+ * Folders whose parent is missing move to the root. A cycle (A inside B inside A) is broken by
+ * moving one of its folders to the root; folders hanging below the cycle keep their parent.
+ */
+function fixFolderTree(folders: Folder[]): Folder[] {
+  const byId = new Map(folders.map((f) => [f.id, f]));
+  for (const f of folders) {
+    if (f.parentId !== null && (!byId.has(f.parentId) || f.parentId === f.id)) f.parentId = null;
+  }
+  for (const f of folders) {
+    const path = new Set<string>();
+    for (let node: Folder | undefined = f; node; node = byId.get(node.parentId ?? '')) {
+      if (path.has(node.id)) {
+        node.parentId = null;
+        break;
+      }
+      path.add(node.id);
+    }
+  }
+  return folders;
+}
+
+function normalizeNote(
+  v: unknown,
+  now: number,
+  folderIds: ReadonlySet<string>,
+  taskIds: ReadonlySet<string>,
+): Note | null {
   if (!isRecord(v)) return null;
   const title = str(v.title).trim();
   if (!title) return null;
   const createdAt = time(v.createdAt, now);
+  const folderId = typeof v.folderId === 'string' && folderIds.has(v.folderId) ? v.folderId : null;
+  const links = list(v.taskIds).filter(
+    (id): id is string => typeof id === 'string' && taskIds.has(id),
+  );
   return {
     id: str(v.id),
     title,
     text: str(v.text),
+    folderId,
+    taskIds: [...new Set(links)],
     createdAt,
     updatedAt: time(v.updatedAt, createdAt),
   };
@@ -159,16 +201,28 @@ export function normalizeSettings(v: unknown): Settings {
 export function normalizeAppData(v: unknown, now = Date.now()): AppData {
   const d = isRecord(v) ? v : {};
   const keep = <T>(x: T | null): x is T => x !== null;
-  return {
-    schemaVersion: CURRENT_SCHEMA_VERSION,
-    tasks: uniqueIds(
-      list(d.tasks)
-        .map((t) => normalizeTask(t, now))
+  const tasks = uniqueIds(
+    list(d.tasks)
+      .map((t) => normalizeTask(t, now))
+      .filter(keep),
+  );
+  // Duplicate folder ids get new values before the tree is checked, so parent links stay unambiguous.
+  const folders = fixFolderTree(
+    uniqueIds(
+      list(d.folders)
+        .map((f) => normalizeFolder(f, now))
         .filter(keep),
     ),
+  );
+  const folderIds = new Set(folders.map((f) => f.id));
+  const taskIds = new Set(tasks.map((t) => t.id));
+  return {
+    schemaVersion: CURRENT_SCHEMA_VERSION,
+    tasks,
+    folders,
     notes: uniqueIds(
       list(d.notes)
-        .map((n) => normalizeNote(n, now))
+        .map((n) => normalizeNote(n, now, folderIds, taskIds))
         .filter(keep),
     ),
     secrets: uniqueIds(

@@ -32,10 +32,23 @@ export interface Task {
   links: LinkItem[];
 }
 
+/** A folder in the knowledge space (phase 1). Folders nest; `parentId: null` is the root. */
+export interface Folder {
+  id: string;
+  name: string;
+  parentId: string | null;
+  createdAt: number;
+}
+
 export interface Note {
   id: string;
   title: string;
+  /** Markdown with KaTeX formulas. */
   text: string;
+  /** null — the root of the knowledge space. */
+  folderId: string | null;
+  /** Linked tasks. The link is stored only here; a task finds its notes by this list. */
+  taskIds: string[];
   createdAt: number;
   updatedAt: number;
 }
@@ -78,6 +91,7 @@ export interface Settings {
 export interface AppData {
   schemaVersion: number;
   tasks: Task[];
+  folders: Folder[];
   notes: Note[];
   secrets: Secret[];
   settings: Settings;

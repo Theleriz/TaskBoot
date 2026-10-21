@@ -27,7 +27,7 @@ export function DataSettings() {
   const where =
     platform.kind === 'shell'
       ? 'в файле %APPDATA%\\TaskTracker\\data.json'
-      : 'в хранилище этого браузера (localStorage)';
+      : 'в хранилище этого браузера (IndexedDB)';
 
   const onFile = async (file: File) => {
     setError(null);

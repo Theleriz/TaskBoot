@@ -131,8 +131,57 @@ describe('normalizeAppData', () => {
       secrets: [{ name: ' ' }, { name: 'S', value: 'v', createdAt: 2 }],
     });
     expect(data.notes).toEqual([
-      { id: expect.any(String), title: 'N', text: 't', createdAt: 1, updatedAt: 1 },
+      {
+        id: expect.any(String),
+        title: 'N',
+        text: 't',
+        folderId: null,
+        taskIds: [],
+        createdAt: 1,
+        updatedAt: 1,
+      },
     ]);
     expect(data.secrets).toEqual([{ id: expect.any(String), name: 'S', value: 'v', createdAt: 2 }]);
+  });
+});
+
+describe('knowledge space (schema 2)', () => {
+  const folder = (id: string, parentId: string | null, name = id) => ({ id, name, parentId });
+
+  it('moves folders with a missing parent to the root and drops nameless ones', () => {
+    const data = normalizeAppData({
+      folders: [folder('a', 'gone'), folder('b', 'a'), { id: 'c', name: '  ' }, folder('d', 'c')],
+    });
+    expect(data.folders.map((f) => [f.id, f.parentId])).toEqual([
+      ['a', null],
+      ['b', 'a'],
+      ['d', null],
+    ]);
+  });
+
+  it('breaks folder cycles but keeps the folders below them in place', () => {
+    const data = normalizeAppData({
+      folders: [folder('child', 'a'), folder('a', 'b'), folder('b', 'a'), folder('self', 'self')],
+    });
+    const parent = Object.fromEntries(data.folders.map((f) => [f.id, f.parentId]));
+    expect(parent.child).toBe('a');
+    expect(parent.self).toBeNull();
+    // Exactly one of a / b moves to the root, the other stays inside it.
+    expect([parent.a, parent.b].filter((p) => p === null)).toHaveLength(1);
+  });
+
+  it('checks note folders and task links', () => {
+    const data = normalizeAppData({
+      tasks: [{ id: 't1', title: 'Task' }],
+      folders: [folder('f1', null)],
+      notes: [
+        { id: 'n1', title: 'In folder', folderId: 'f1', taskIds: ['t1', 'gone', 't1', 7] },
+        { id: 'n2', title: 'Lost folder', folderId: 'gone', taskIds: 'nope' },
+      ],
+    });
+    expect(data.notes.map((n) => [n.folderId, n.taskIds])).toEqual([
+      ['f1', ['t1']],
+      [null, []],
+    ]);
   });
 });

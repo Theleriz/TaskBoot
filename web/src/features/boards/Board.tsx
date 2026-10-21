@@ -30,6 +30,10 @@ export function Board({
 
   const zoneOf = (t: Task) => (matrix ? t.quadrant : t.status);
   const otherOf = (t: Task) => others.find((z) => z.key === (matrix ? t.status : t.quadrant));
+  const noteCounts = new Map<string, number>();
+  for (const n of data.notes) {
+    for (const id of n.taskIds) noteCounts.set(id, (noteCounts.get(id) ?? 0) + 1);
+  }
 
   const endDrag = (e: DragEvent) => {
     dragId.current = null;
@@ -91,6 +95,7 @@ export function Board({
                 <Card
                   key={task.id}
                   task={task}
+                  notes={noteCounts.get(task.id)}
                   other={otherOf(task)}
                   dragging={draggingId === task.id}
                   onOpen={(eventTime) => {

@@ -4,16 +4,27 @@ import { SchemaTooNewError } from './errors.ts';
  * Version of the stored data format.
  * 0 — no `schemaVersion` field: native data.json and the legacy web app (same shape as 1).
  * 1 — phase 0.3: the same fields plus `schemaVersion`.
+ * 2 — phase 1.1: knowledge space — `folders`, and `folderId` / `taskIds` in notes.
+ *     Existing notes go to the root folder without links (filled in by normalization).
  *
  * To change the format: bump this number and add a migration from the previous version.
  */
-export const CURRENT_SCHEMA_VERSION = 1;
+export const CURRENT_SCHEMA_VERSION = 2;
 
 type Data = Record<string, unknown>;
 
 // MIGRATIONS[n] turns version n into version n + 1.
 const MIGRATIONS: Record<number, (data: Data) => Data> = {
   0: (data) => ({ ...data, schemaVersion: 1 }),
+  1: (data) => {
+    const next: Data = { ...data, schemaVersion: 2, folders: [] };
+    if (Array.isArray(data.notes)) {
+      next.notes = data.notes.map((n: unknown) =>
+        typeof n === 'object' && n !== null ? { ...n, folderId: null, taskIds: [] } : n,
+      );
+    }
+    return next;
+  },
 };
 
 export function schemaVersionOf(data: Data): number {

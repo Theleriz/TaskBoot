@@ -6,7 +6,35 @@ import { migrate, CURRENT_SCHEMA_VERSION } from './schema.ts';
 
 describe('schema migrations', () => {
   it('treats data without schemaVersion as version 0 and upgrades it', () => {
-    expect(migrate({ tasks: [] })).toEqual({ tasks: [], schemaVersion: CURRENT_SCHEMA_VERSION });
+    expect(migrate({ tasks: [] })).toEqual({
+      tasks: [],
+      folders: [],
+      schemaVersion: CURRENT_SCHEMA_VERSION,
+    });
+  });
+
+  it('puts version 1 notes into the root folder without links', () => {
+    const v1 = {
+      schemaVersion: 1,
+      tasks: [{ id: 't1', title: 'Task' }],
+      notes: [{ id: 'n1', title: 'Old note', text: 'body', createdAt: 5, updatedAt: 6 }],
+    };
+    expect(migrate(v1)).toMatchObject({
+      schemaVersion: 2,
+      folders: [],
+      notes: [{ id: 'n1', title: 'Old note', text: 'body', folderId: null, taskIds: [] }],
+    });
+    const data = importData(JSON.stringify(v1));
+    expect(data.notes[0]).toEqual({
+      id: 'n1',
+      title: 'Old note',
+      text: 'body',
+      folderId: null,
+      taskIds: [],
+      createdAt: 5,
+      updatedAt: 6,
+    });
+    expect(data.tasks[0]?.title).toBe('Task');
   });
 
   it('refuses data from a newer app', () => {
@@ -28,7 +56,8 @@ describe('import', () => {
       bg: '#F3EDF5',
       accent: '#A95DD4',
     });
-    expect(data.notes[0]?.title).toBe('Идеи');
+    expect(data.notes[0]).toMatchObject({ title: 'Идеи', folderId: null, taskIds: [] });
+    expect(data.folders).toEqual([]);
     expect(data.secrets[0]?.value).toBe('demo-value');
   });
 

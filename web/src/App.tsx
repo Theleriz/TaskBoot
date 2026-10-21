@@ -27,16 +27,24 @@ function Shell({ prefs }: { prefs: Storage | null }) {
     return VIEW_IDS.includes(saved as ViewId) ? (saved as ViewId) : 'matrix';
   });
   const [detailsId, setDetailsId] = useState<string | null>(null);
+  // A note to open in the workspace, chosen in task details (phase 1.4).
+  const [noteToOpen, setNoteToOpen] = useState<string | null>(null);
   const detailsTask = detailsId ? data.tasks.find((t) => t.id === detailsId) : undefined;
 
   const select = (next: ViewId) => {
     setView(next);
     setDetailsId(null);
+    setNoteToOpen(null);
     try {
       prefs?.setItem(TAB_KEY, next);
     } catch {
       /* only a convenience */
     }
+  };
+
+  const openNote = (noteId: string) => {
+    select('space');
+    setNoteToOpen(noteId);
   };
 
   const closeDetails = () => {
@@ -105,7 +113,13 @@ function Shell({ prefs }: { prefs: Storage | null }) {
         )}
         {view === 'space' && (
           <section className="view scroll" role="tabpanel" aria-label="Пространство">
-            <WorkspaceView />
+            {/* A new key opens the chosen note even when the workspace is already shown. */}
+            <WorkspaceView
+              key={noteToOpen ?? ''}
+              prefs={prefs}
+              openNoteId={noteToOpen}
+              onOpenTask={setDetailsId}
+            />
           </section>
         )}
         {view === 'settings' && (
@@ -116,7 +130,12 @@ function Shell({ prefs }: { prefs: Storage | null }) {
       </main>
 
       {detailsTask && (
-        <DetailsPanel key={detailsTask.id} task={detailsTask} onClose={closeDetails} />
+        <DetailsPanel
+          key={detailsTask.id}
+          task={detailsTask}
+          onClose={closeDetails}
+          onOpenNote={openNote}
+        />
       )}
     </>
   );

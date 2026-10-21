@@ -7,6 +7,7 @@ import { IconButton } from '../../ui/Icon.tsx';
 import { QUADRANT_ZONES, STAGE_ZONES } from '../boards/zones.ts';
 import { Checklist } from './Checklist.tsx';
 import { Links } from './Links.tsx';
+import { TaskNotes } from './TaskNotes.tsx';
 
 function TitleField({ task }: { task: Task }) {
   const { apply } = useAppData();
@@ -41,7 +42,15 @@ function TitleField({ task }: { task: Task }) {
 }
 
 /** F-83 / F-86: task details in a side panel. Closes on Esc and on a click outside (N-24). */
-export function DetailsPanel({ task, onClose }: { task: Task; onClose: () => void }) {
+export function DetailsPanel({
+  task,
+  onClose,
+  onOpenNote,
+}: {
+  task: Task;
+  onClose: () => void;
+  onOpenNote: (noteId: string) => void;
+}) {
   const { apply } = useAppData();
   const panel = useRef<HTMLElement>(null);
   const downOnOverlay = useRef(false);
@@ -144,6 +153,7 @@ export function DetailsPanel({ task, onClose }: { task: Task; onClose: () => voi
 
           <Checklist task={task} />
           <Links task={task} />
+          <TaskNotes task={task} onOpenNote={onOpenNote} />
         </div>
 
         <footer className="panel-foot">
