@@ -200,6 +200,25 @@ export function deleteNote(d: AppData, id: string) {
   d.notes = d.notes.filter((n) => n.id !== id);
 }
 
+/* ---------- Links between notes and tasks (phase 1.4) ---------- */
+
+/** The link is stored in the note (Note.taskIds); a task finds its notes through this. */
+export const notesOfTask = (d: AppData, taskId: string) =>
+  d.notes.filter((n) => n.taskIds.includes(taskId));
+
+/** Linking does not count as editing the note: updatedAt stays. */
+export function linkNoteTask(d: AppData, noteId: string, taskId: string): boolean {
+  const note = d.notes.find((n) => n.id === noteId);
+  if (!note || !findTask(d, taskId)) return false;
+  if (!note.taskIds.includes(taskId)) note.taskIds.push(taskId);
+  return true;
+}
+
+export function unlinkNoteTask(d: AppData, noteId: string, taskId: string) {
+  const note = d.notes.find((n) => n.id === noteId);
+  if (note) note.taskIds = note.taskIds.filter((id) => id !== taskId);
+}
+
 /* ---------- Folders (knowledge space, phase 1.2) ---------- */
 
 export const findFolder = (d: AppData, id: string) => d.folders.find((f) => f.id === id);

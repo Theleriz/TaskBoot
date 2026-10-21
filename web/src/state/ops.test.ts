@@ -6,6 +6,9 @@ import {
   addNote,
   deleteFolder,
   isInsideFolder,
+  linkNoteTask,
+  notesOfTask,
+  unlinkNoteTask,
   moveFolder,
   moveNote,
   renameFolder,
@@ -162,5 +165,39 @@ describe('knowledge space', () => {
     // The same text does not count as an edit.
     setNoteText(d, 'n1', '# Text', 12);
     expect(d.notes[0]?.updatedAt).toBe(11);
+  });
+});
+
+describe('links between notes and tasks', () => {
+  function data() {
+    const d = createEmptyData();
+    addTask(d, 'Task 1', 't1', 1);
+    addTask(d, 'Task 2', 't2', 2);
+    addNote(d, 'Note A', '', 'a', 3);
+    addNote(d, 'Note B', '', 'b', 4);
+    return d;
+  }
+
+  it('links both ways, once, and only existing items', () => {
+    const d = data();
+    expect(linkNoteTask(d, 'a', 't1')).toBe(true);
+    expect(linkNoteTask(d, 'a', 't1')).toBe(true);
+    expect(linkNoteTask(d, 'b', 't1')).toBe(true);
+    expect(linkNoteTask(d, 'a', 'missing')).toBe(false);
+    expect(linkNoteTask(d, 'missing', 't1')).toBe(false);
+    expect(d.notes[0]?.taskIds).toEqual(['t1']);
+    expect(notesOfTask(d, 't1').map((n) => n.id)).toEqual(['a', 'b']);
+    expect(notesOfTask(d, 't2')).toEqual([]);
+    // A link is not an edit of the note text.
+    expect(d.notes[0]?.updatedAt).toBe(3);
+  });
+
+  it('unlinks without touching other links', () => {
+    const d = data();
+    linkNoteTask(d, 'a', 't1');
+    linkNoteTask(d, 'a', 't2');
+    unlinkNoteTask(d, 'a', 't1');
+    expect(d.notes[0]?.taskIds).toEqual(['t2']);
+    expect(notesOfTask(d, 't1')).toEqual([]);
   });
 });

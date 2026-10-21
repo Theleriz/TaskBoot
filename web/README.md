@@ -31,7 +31,7 @@ npm ci
 | `src/main.tsx`            | Entry point: picks the environment (browser or WebView2 shell)                                                                                                                |
 | `src/App.tsx`             | Providers and the app shell: tabs, timer widget, settings gear, details panel                                                                                                 |
 | `src/features/boards/`    | Eisenhower matrix and Kanban: zones, cards, drag and drop                                                                                                                     |
-| `src/features/details/`   | Task details panel: title, position, description, checklist, links                                                                                                            |
+| `src/features/details/`   | Task details panel: title, position, description, checklist, links, linked notes                                                                                              |
 | `src/features/pomodoro/`  | Timers, ticker (Web Worker), sounds, header widget, window title                                                                                                              |
 | `src/features/workspace/` | The workspace tab: knowledge-space layout and secrets                                                                                                                         |
 | `src/features/knowledge/` | Folder tree, Markdown editor (CodeMirror), preview (markdown-it + KaTeX), search (MiniSearch; RegEx in a Web Worker with a 1 s limit); editor, preview and search load lazily |

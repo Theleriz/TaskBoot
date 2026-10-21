@@ -186,3 +186,63 @@ describe('search', () => {
     ).toBeInTheDocument();
   });
 });
+
+describe('links between notes and tasks', () => {
+  const now = 1;
+  const task = (id: string, title: string) => ({
+    id,
+    title,
+    quadrant: 'q1',
+    status: 'todo',
+    createdAt: now,
+  });
+  const stored = {
+    schemaVersion: 2,
+    tasks: [task('t1', 'Сдать отчёт'), task('t2', 'Позвонить')],
+    folders: [{ id: 'f', name: 'Работа', parentId: null }],
+    notes: [{ id: 'n1', title: 'Черновик', text: '', folderId: 'f', taskIds: [] }],
+  };
+
+  it('links a task to a note and opens it from there', async () => {
+    const user = userEvent.setup();
+    renderSpace(stored);
+    await user.click(await within(await loaded()).findByRole('button', { name: 'Работа' }));
+    await user.click(within(tree()).getByRole('button', { name: 'Черновик' }));
+
+    const links = screen.getByRole('group', { name: 'Связанные задачи' });
+    await user.selectOptions(within(links).getByLabelText('Привязать задачу'), 'Сдать отчёт');
+    await user.click(within(links).getByRole('button', { name: 'Сдать отчёт' }));
+
+    const details = await screen.findByRole('dialog', { name: 'Детали задачи' });
+    expect(within(details).getByRole('button', { name: /^Черновик/ })).toBeInTheDocument();
+    expect(within(details).getByText('Работа')).toBeInTheDocument();
+
+    await user.click(within(details).getByRole('button', { name: 'Отвязать заметку «Черновик»' }));
+    await user.keyboard('{Escape}');
+    expect(within(links).queryByRole('button', { name: 'Сдать отчёт' })).toBeNull();
+  });
+
+  it('creates a linked note from task details and opens it in the workspace', async () => {
+    const user = userEvent.setup();
+    localStorage.setItem(BROWSER_DATA_KEY, JSON.stringify(stored));
+    const env = createEnvironment(window);
+    render(<App env={env} />);
+
+    await user.click(await screen.findByRole('article', { name: 'Позвонить' }));
+    const details = await screen.findByRole('dialog', { name: 'Детали задачи' });
+    await user.click(within(details).getByRole('button', { name: 'Новая заметка' }));
+
+    expect(screen.getByRole('tab', { name: 'Пространство' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    expect(screen.getByLabelText('Заголовок заметки')).toHaveValue('Позвонить');
+    const links = screen.getByRole('group', { name: 'Связанные задачи' });
+    expect(within(links).getByRole('button', { name: 'Позвонить' })).toBeInTheDocument();
+
+    // The card on the board shows that the task has a note.
+    await user.click(screen.getByRole('tab', { name: 'Эйзенхауэр' }));
+    const card = screen.getByRole('article', { name: 'Позвонить' });
+    expect(within(card).getByTitle('Заметок: 1')).toBeInTheDocument();
+  });
+});

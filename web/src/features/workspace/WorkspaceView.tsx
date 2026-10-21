@@ -47,11 +47,28 @@ function readOpen(prefs: Storage | null): Set<string> {
  * F-60 / F-61: the workspace. Left — the knowledge space (folders and notes) and the secrets
  * section; right — the open note or the secrets.
  */
-export function WorkspaceView({ prefs = null }: { prefs?: Storage | null }) {
+export function WorkspaceView({
+  prefs = null,
+  openNoteId = null,
+  onOpenTask,
+}: {
+  prefs?: Storage | null;
+  /** A note to show right away (opened from task details); otherwise the last one. */
+  openNoteId?: string | null;
+  onOpenTask: (taskId: string) => void;
+}) {
   const { data, apply } = useAppData();
   // A note id, SECRETS, or null.
-  const [selected, setSelected] = useState<string | null>(() => read(prefs, SELECTION_KEY));
-  const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => readOpen(prefs));
+  const [selected, setSelected] = useState<string | null>(
+    () => openNoteId ?? read(prefs, SELECTION_KEY),
+  );
+  const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => {
+    const open = readOpen(prefs);
+    // Show where the open note lies in the tree (also one opened from a task).
+    const folderId = data.notes.find((n) => n.id === selected)?.folderId ?? null;
+    for (const id of folderAncestors(data, folderId)) open.add(id);
+    return open;
+  });
   const [mode, setMode] = useState<NoteMode>(() => {
     const saved = read(prefs, MODE_KEY);
     return isNoteMode(saved) ? saved : 'split';
@@ -228,6 +245,7 @@ export function WorkspaceView({ prefs = null }: { prefs?: Storage | null }) {
             onDeleted={() => select(null)}
             focusTitle={note.id === createdId}
             jump={jump?.noteId === note.id ? jump : null}
+            onOpenTask={onOpenTask}
           />
         ) : selected === SECRETS ? (
           <Secrets />

@@ -930,6 +930,53 @@ button.tree-row {
   font-style: italic;
 }
 
+/* Связанные задачи */
+.note-tasks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+.note-tasks .link-select {
+  flex: 0 1 auto;
+  max-width: 260px;
+  padding: 3px 8px;
+}
+.task-chip {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  border-radius: 14px;
+  padding-right: 2px;
+}
+.task-chip-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  padding: 3px 4px 3px 10px;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.task-chip-open:hover {
+  color: var(--accent);
+}
+.task-chip.is-done .task-chip-open {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+.task-chip .icon-btn {
+  width: 22px;
+  height: 22px;
+}
+
 /* Просмотр Markdown */
 .md {
   padding: 4px 16px;
@@ -1221,6 +1268,22 @@ button.tree-row {
 }
 .link-main:hover {
   background: var(--hover);
+}
+button.link-main {
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+.note-link-row {
+  margin-top: 6px;
+}
+.link-select {
+  width: auto;
+  flex: 1;
+  min-width: 0;
+  max-width: 100%;
+  color: var(--muted);
 }
 .link-main .icon {
   color: var(--accent);

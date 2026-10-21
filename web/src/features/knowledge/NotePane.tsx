@@ -5,6 +5,7 @@ import { deleteNote, moveNote, renameNote, setNoteText } from '../../state/ops.t
 import { IconButton } from '../../ui/Icon.tsx';
 import { formatDate } from '../../ui/format.ts';
 import type { Jump } from './NoteEditor.tsx';
+import { NoteTasks } from './NoteTasks.tsx';
 import { NOTE_MODES, type NoteMode } from './modes.ts';
 import { folderOptions } from './tree.ts';
 
@@ -21,6 +22,7 @@ export function NotePane({
   onDeleted,
   focusTitle = false,
   jump = null,
+  onOpenTask,
 }: {
   note: Note;
   mode: NoteMode;
@@ -29,6 +31,7 @@ export function NotePane({
   focusTitle?: boolean;
   /** Search match to show in the editor. */
   jump?: Jump | null;
+  onOpenTask: (taskId: string) => void;
 }) {
   const { data, apply } = useAppData();
   const [title, setTitle] = useState(note.title);
@@ -111,6 +114,8 @@ export function NotePane({
           }}
         />
       </div>
+
+      <NoteTasks note={note} onOpenTask={onOpenTask} />
 
       <div className={`note-body mode-${mode}`}>
         {mode !== 'preview' && (
