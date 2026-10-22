@@ -54,19 +54,24 @@ export interface Jump {
 export default function NoteEditor({
   initialText,
   onChange,
+  onSelect,
   jump = null,
 }: {
   initialText: string;
   onChange: (text: string) => void;
+  /** The selected range, on every change of the selection. */
+  onSelect?: (range: Jump) => void;
   jump?: Jump | null;
 }) {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
   const changed = useRef(onChange);
+  const selected = useRef(onSelect);
   const [initial] = useState(initialText);
 
   useEffect(() => {
     changed.current = onChange;
+    selected.current = onSelect;
   });
 
   useEffect(() => {
@@ -88,6 +93,10 @@ export default function NoteEditor({
           EditorView.contentAttributes.of({ 'aria-label': 'Текст заметки', spellcheck: 'true' }),
           EditorView.updateListener.of((u) => {
             if (u.docChanged) changed.current(u.state.doc.toString());
+            if (u.selectionSet || u.docChanged) {
+              const { from, to } = u.state.selection.main;
+              selected.current?.({ from, to });
+            }
           }),
         ],
       }),
