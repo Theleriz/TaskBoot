@@ -2,13 +2,19 @@
 // clone, so callers never touch the stored state. Ids and timestamps come from the caller:
 // React may run an update twice, and both runs must produce the same result.
 
+import { cardSlots } from '../data/normalize.ts';
+import { newSchedule, review } from '../data/scheduler.ts';
 import {
   type AppData,
+  type CardKind,
+  type CardRating,
   type Quadrant,
   type Status,
   type Task,
   type ThemeSettings,
   DURATION_LIMITS,
+  NEW_CARDS_LIMITS,
+  REVIEW_LOG_LIMIT,
 } from '../data/model.ts';
 import { normalizeUrl } from '../data/url.ts';
 
@@ -198,6 +204,8 @@ export function moveNote(d: AppData, id: string, folderId: string | null): boole
 
 export function deleteNote(d: AppData, id: string) {
   d.notes = d.notes.filter((n) => n.id !== id);
+  // Cards made from the note stay; they only lose the reference.
+  for (const card of d.cards) if (card.noteId === id) card.noteId = null;
 }
 
 /* ---------- Links between notes and tasks (phase 1.4) ---------- */
@@ -348,4 +356,134 @@ export function deleteTheme(d: AppData, id: string) {
       customAccent: theme.accent,
     });
   }
+}
+
+/* ---------- Flashcards (phase 1.5) ---------- */
+
+export const findDeck = (d: AppData, id: string) => d.decks.find((x) => x.id === id);
+export const findCard = (d: AppData, id: string) => d.cards.find((c) => c.id === id);
+
+export function addDeck(d: AppData, name: string, id: string, now: number): boolean {
+  const clean = name.trim();
+  if (!clean) return false;
+  d.decks.push({ id, name: clean, createdAt: now });
+  return true;
+}
+
+export function renameDeck(d: AppData, id: string, name: string): boolean {
+  const deck = findDeck(d, id);
+  const clean = name.trim();
+  if (!deck || !clean) return false;
+  deck.name = clean;
+  return true;
+}
+
+/** The deck goes with its cards and their review history. */
+export function deleteDeck(d: AppData, id: string) {
+  const gone = new Set(d.cards.filter((c) => c.deckId === id).map((c) => c.id));
+  d.decks = d.decks.filter((x) => x.id !== id);
+  d.cards = d.cards.filter((c) => !gone.has(c.id));
+  d.reviews = d.reviews.filter((r) => !gone.has(r.cardId));
+}
+
+export interface CardInput {
+  deckId: string;
+  kind: CardKind;
+  front: string;
+  back: string;
+  noteId?: string | null;
+}
+
+/** Why a card cannot be saved, or null when it can. */
+export function cardProblem(input: Pick<CardInput, 'kind' | 'front'>): string | null {
+  if (!input.front.trim()) {
+    return input.kind === 'cloze' ? 'Введите текст с пропусками' : 'Введите вопрос';
+  }
+  if (input.kind === 'cloze' && cardSlots('cloze', input.front).length === 0) {
+    return 'Отметьте хотя бы один пропуск: {{c1::ответ}}';
+  }
+  return null;
+}
+
+export function addCard(d: AppData, input: CardInput, id: string, now: number): boolean {
+  if (cardProblem(input) || !findDeck(d, input.deckId)) return false;
+  const noteId = input.noteId && d.notes.some((n) => n.id === input.noteId) ? input.noteId : null;
+  d.cards.push({
+    id,
+    deckId: input.deckId,
+    kind: input.kind,
+    front: input.front,
+    back: input.back,
+    noteId,
+    schedules: Object.fromEntries(
+      cardSlots(input.kind, input.front).map((s) => [s, newSchedule(now)]),
+    ),
+    createdAt: now,
+    updatedAt: now,
+  });
+  return true;
+}
+
+/**
+ * Edits keep the progress of review items that still exist: a fixed typo does not reset the card.
+ * New gaps start as new items; removed gaps and their schedules go away.
+ */
+export function updateCard(
+  d: AppData,
+  id: string,
+  input: Omit<CardInput, 'noteId'>,
+  now: number,
+): boolean {
+  const card = findCard(d, id);
+  if (!card || cardProblem(input) || !findDeck(d, input.deckId)) return false;
+  const schedules: typeof card.schedules = {};
+  for (const slot of cardSlots(input.kind, input.front)) {
+    schedules[slot] = (card.kind === input.kind && card.schedules[slot]) || newSchedule(now);
+  }
+  Object.assign(card, {
+    deckId: input.deckId,
+    kind: input.kind,
+    front: input.front,
+    back: input.back,
+    schedules,
+    updatedAt: now,
+  });
+  return true;
+}
+
+export function deleteCard(d: AppData, id: string) {
+  d.cards = d.cards.filter((c) => c.id !== id);
+  d.reviews = d.reviews.filter((r) => r.cardId !== id);
+}
+
+/** Starts the item over as a new one (for a card learned wrong). */
+export function resetCard(d: AppData, id: string, now: number) {
+  const card = findCard(d, id);
+  if (!card) return;
+  for (const slot of Object.keys(card.schedules)) card.schedules[slot] = newSchedule(now);
+}
+
+/** An answer in a study session: the FSRS schedule moves on and the answer is logged. */
+export function answerCard(
+  d: AppData,
+  cardId: string,
+  slot: string,
+  rating: CardRating,
+  now: number,
+): boolean {
+  const card = findCard(d, cardId);
+  const current = card?.schedules[slot];
+  if (!card || !current) return false;
+  card.schedules[slot] = review(current, rating, now);
+  d.reviews.push({ cardId, slot, rating, state: current.state, at: now });
+  if (d.reviews.length > REVIEW_LOG_LIMIT) d.reviews.splice(0, d.reviews.length - REVIEW_LOG_LIMIT);
+  return true;
+}
+
+export function setNewCardsPerDay(d: AppData, value: number) {
+  if (!Number.isFinite(value)) return;
+  d.settings.newCardsPerDay = Math.min(
+    NEW_CARDS_LIMITS.max,
+    Math.max(NEW_CARDS_LIMITS.min, Math.round(value)),
+  );
 }

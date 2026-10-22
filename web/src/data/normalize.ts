@@ -1,18 +1,31 @@
+import { clozeNumbers } from './cloze.ts';
 import { newId } from './ids.ts';
 import {
   type AppData,
+  type CardRating,
+  type CardState,
   type CheckItem,
+  type Deck,
+  type Flashcard,
   type Folder,
   type LinkItem,
   type Note,
+  type ReviewEntry,
   type SavedTheme,
+  type Schedule,
   type Secret,
   type Settings,
   type Task,
   type ThemeSettings,
+  BASIC_SLOT,
+  CARD_KINDS,
+  CARD_STATES,
   DEFAULT_THEME_COLORS,
   DURATION_LIMITS,
+  NEW_CARDS_LIMITS,
   QUADRANTS,
+  RATINGS,
+  REVIEW_LOG_LIMIT,
   STATUSES,
   THEME_MODES,
 } from './model.ts';
@@ -155,6 +168,12 @@ function duration(v: unknown, limits: { min: number; max: number; default: numbe
   return Math.min(limits.max, Math.max(limits.min, minutes));
 }
 
+/** Unlike durations, zero is a valid count ("no new cards today"). */
+function count(v: unknown, limits: { min: number; max: number; default: number }): number {
+  if (typeof v !== 'number' || !Number.isFinite(v)) return limits.default;
+  return Math.min(limits.max, Math.max(limits.min, Math.round(v)));
+}
+
 function normalizeTheme(v: unknown): ThemeSettings {
   const t = isRecord(v) ? v : {};
   return {
@@ -183,6 +202,7 @@ export function normalizeSettings(v: unknown): Settings {
   const settings: Settings = {
     workMinutes: duration(s.workMinutes, DURATION_LIMITS.workMinutes),
     restMinutes: duration(s.restMinutes, DURATION_LIMITS.restMinutes),
+    newCardsPerDay: count(s.newCardsPerDay, NEW_CARDS_LIMITS),
     theme: normalizeTheme(s.theme),
     themes: normalizeSavedThemes(s.themes),
   };
@@ -195,6 +215,134 @@ export function normalizeSettings(v: unknown): Settings {
     settings.theme.savedId = null;
   }
   return settings;
+}
+
+/* ---------- Flashcards (schema 3) ---------- */
+
+const num = (v: unknown, fallback = 0): number =>
+  typeof v === 'number' && Number.isFinite(v) ? v : fallback;
+
+/** The schedule of a review item that was never studied (what ts-fsrs creates). */
+export function emptySchedule(now: number): Schedule {
+  return {
+    due: now,
+    stability: 0,
+    difficulty: 0,
+    elapsedDays: 0,
+    scheduledDays: 0,
+    learningSteps: 0,
+    reps: 0,
+    lapses: 0,
+    state: 0,
+    lastReview: null,
+  };
+}
+
+function normalizeSchedule(v: unknown, now: number): Schedule {
+  if (!isRecord(v)) return emptySchedule(now);
+  const state = CARD_STATES.includes(v.state as CardState) ? (v.state as CardState) : 0;
+  return {
+    due: num(v.due, now),
+    stability: Math.max(0, num(v.stability)),
+    difficulty: Math.max(0, num(v.difficulty)),
+    elapsedDays: Math.max(0, num(v.elapsedDays)),
+    scheduledDays: Math.max(0, num(v.scheduledDays)),
+    learningSteps: Math.max(0, Math.round(num(v.learningSteps))),
+    reps: Math.max(0, Math.round(num(v.reps))),
+    lapses: Math.max(0, Math.round(num(v.lapses))),
+    state,
+    lastReview:
+      typeof v.lastReview === 'number' && Number.isFinite(v.lastReview) ? v.lastReview : null,
+  };
+}
+
+function normalizeDeck(v: unknown, now: number): Deck | null {
+  if (!isRecord(v)) return null;
+  const name = str(v.name).trim();
+  if (!name) return null;
+  return { id: str(v.id), name, createdAt: time(v.createdAt, now) };
+}
+
+/**
+ * Review items follow the card: one for a basic card, one per gap number for a cloze card.
+ * Known items keep their schedules; new ones start fresh. A cloze card without gaps cannot be
+ * studied, so it becomes a basic card.
+ */
+export function cardSlots(kind: Flashcard['kind'], front: string): string[] {
+  return kind === 'cloze' ? clozeNumbers(front) : [BASIC_SLOT];
+}
+
+function normalizeCard(
+  v: unknown,
+  now: number,
+  noteIds: ReadonlySet<string>,
+): (Flashcard & { deckId: string }) | null {
+  if (!isRecord(v)) return null;
+  const front = str(v.front);
+  if (!front.trim()) return null;
+  let kind = oneOf(CARD_KINDS, v.kind, 'basic');
+  if (kind === 'cloze' && clozeNumbers(front).length === 0) kind = 'basic';
+  const stored = isRecord(v.schedules) ? v.schedules : {};
+  const schedules: Record<string, Schedule> = {};
+  for (const slot of cardSlots(kind, front)) schedules[slot] = normalizeSchedule(stored[slot], now);
+  const createdAt = time(v.createdAt, now);
+  return {
+    id: str(v.id),
+    deckId: str(v.deckId),
+    kind,
+    front,
+    back: str(v.back),
+    noteId: typeof v.noteId === 'string' && noteIds.has(v.noteId) ? v.noteId : null,
+    schedules,
+    createdAt,
+    updatedAt: time(v.updatedAt, createdAt),
+  };
+}
+
+function normalizeReview(v: unknown, cardIds: ReadonlySet<string>): ReviewEntry | null {
+  if (!isRecord(v)) return null;
+  const cardId = str(v.cardId);
+  const rating = v.rating as CardRating;
+  if (!cardIds.has(cardId) || !RATINGS.includes(rating) || typeof v.at !== 'number') return null;
+  return {
+    cardId,
+    slot: str(v.slot),
+    rating,
+    state: CARD_STATES.includes(v.state as CardState) ? (v.state as CardState) : 0,
+    at: v.at,
+  };
+}
+
+/** Cards whose deck is missing go to a recovered deck instead of being lost. */
+function normalizeFlashcards(
+  d: Record<string, unknown>,
+  now: number,
+  noteIds: ReadonlySet<string>,
+) {
+  const keep = <T>(x: T | null): x is T => x !== null;
+  const decks = uniqueIds(
+    list(d.decks)
+      .map((x) => normalizeDeck(x, now))
+      .filter(keep),
+  );
+  const cards = uniqueIds(
+    list(d.cards)
+      .map((x) => normalizeCard(x, now, noteIds))
+      .filter(keep),
+  );
+  const deckIds = new Set(decks.map((x) => x.id));
+  const orphans = cards.filter((c) => !deckIds.has(c.deckId));
+  if (orphans.length > 0) {
+    const recovered = { id: newId(), name: 'Без колоды', createdAt: now };
+    decks.push(recovered);
+    for (const c of orphans) c.deckId = recovered.id;
+  }
+  const cardIds = new Set(cards.map((c) => c.id));
+  const reviews = list(d.reviews)
+    .map((x) => normalizeReview(x, cardIds))
+    .filter(keep)
+    .slice(-REVIEW_LOG_LIMIT);
+  return { decks, cards, reviews };
 }
 
 /** Expects data already migrated to the current schema (see migrate()). */
@@ -216,20 +364,22 @@ export function normalizeAppData(v: unknown, now = Date.now()): AppData {
   );
   const folderIds = new Set(folders.map((f) => f.id));
   const taskIds = new Set(tasks.map((t) => t.id));
+  const notes = uniqueIds(
+    list(d.notes)
+      .map((n) => normalizeNote(n, now, folderIds, taskIds))
+      .filter(keep),
+  );
   return {
     schemaVersion: CURRENT_SCHEMA_VERSION,
     tasks,
     folders,
-    notes: uniqueIds(
-      list(d.notes)
-        .map((n) => normalizeNote(n, now, folderIds, taskIds))
-        .filter(keep),
-    ),
+    notes,
     secrets: uniqueIds(
       list(d.secrets)
         .map((s) => normalizeSecret(s, now))
         .filter(keep),
     ),
+    ...normalizeFlashcards(d, now, new Set(notes.map((n) => n.id))),
     settings: normalizeSettings(d.settings),
   };
 }
