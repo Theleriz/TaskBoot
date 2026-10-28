@@ -1,20 +1,35 @@
 # Weekly dependency updates as pull requests (spec D-02: updates land as separate commits).
+#
+# cooldown: only releases at least 14 days old are proposed — the project's rule for new
+# versions (web/README.md). Security updates are not delayed by it.
+# Dependabot does not regenerate THIRD_PARTY_NOTICES.md: before merging, run
+# `node tools/third-party-notices.mjs` in the PR branch (CI checks it).
 version: 2
 updates:
   - package-ecosystem: npm
     directory: /web
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 14
     groups:
       dev-tooling:
         dependency-type: development
+    ignore:
+      # typescript-eslint supports TypeScript only below 6.1 for now; revisit when it supports 7.
+      - dependency-name: typescript
+        update-types: ['version-update:semver-major']
 
   - package-ecosystem: nuget
     directory: /win32
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 14
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 14
