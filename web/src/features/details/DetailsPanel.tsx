@@ -1,7 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Quadrant, Status, Task } from '../../data/model.ts';
 import { useAppData } from '../../state/hooks.ts';
-import { deleteTask, moveTask, renameTask, setDescription } from '../../state/ops.ts';
+import {
+  deleteTask,
+  moveTask,
+  renameTask,
+  sendToBacklog,
+  setDescription,
+  setTaskGoal,
+  takeForToday,
+} from '../../state/ops.ts';
 import { formatDate } from '../../ui/format.ts';
 import { IconButton } from '../../ui/Icon.tsx';
 import { QUADRANT_ZONES, STAGE_ZONES } from '../boards/zones.ts';
@@ -51,7 +59,7 @@ export function DetailsPanel({
   onClose: () => void;
   onOpenNote: (noteId: string) => void;
 }) {
-  const { apply } = useAppData();
+  const { data, apply } = useAppData();
   const panel = useRef<HTMLElement>(null);
   const downOnOverlay = useRef(false);
   const [open, setOpen] = useState(false);
@@ -117,25 +125,69 @@ export function DetailsPanel({
                   ))}
                 </select>
               </label>
+              {!task.backlog && (
+                <label>
+                  Стадия
+                  <select
+                    className="select"
+                    value={task.status}
+                    onChange={(e) => {
+                      const now = Date.now();
+                      const status = e.target.value as Status;
+                      apply((d) => moveTask(d, task.id, { status }, now));
+                    }}
+                  >
+                    {STAGE_ZONES.map((z) => (
+                      <option key={z.key} value={z.key}>
+                        {z.title}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
               <label>
-                Стадия
+                Цель
                 <select
                   className="select"
-                  value={task.status}
+                  value={task.goalId ?? ''}
                   onChange={(e) => {
-                    const now = Date.now();
-                    const status = e.target.value as Status;
-                    apply((d) => moveTask(d, task.id, { status }, now));
+                    const goalId = e.target.value || null;
+                    apply((d) => setTaskGoal(d, task.id, goalId));
                   }}
                 >
-                  {STAGE_ZONES.map((z) => (
-                    <option key={z.key} value={z.key}>
-                      {z.title}
+                  <option value="">Без цели</option>
+                  {data.goals.map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {g.title}
                     </option>
                   ))}
                 </select>
               </label>
             </div>
+            {task.backlog ? (
+              <div className="backlog-note">
+                <span className="muted">В бэклоге — на досках не показывается.</span>
+                <button
+                  type="button"
+                  className="btn small primary"
+                  onClick={() => apply((d) => takeForToday(d, task.id))}
+                >
+                  Взять на сегодня
+                </button>
+              </div>
+            ) : (
+              task.status !== 'done' && (
+                <div className="backlog-note">
+                  <button
+                    type="button"
+                    className="btn small"
+                    onClick={() => apply((d) => sendToBacklog(d, task.id))}
+                  >
+                    Отложить в бэклог
+                  </button>
+                </div>
+              )
+            )}
           </section>
 
           <section className="pane-sec">

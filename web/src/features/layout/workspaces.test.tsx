@@ -29,7 +29,14 @@ describe('workspaces', () => {
   it('starts with "Основное" and all tabs, as before workspaces existed', async () => {
     renderApp();
     expect(await screen.findByRole('button', { name: 'Основное' })).toBeInTheDocument();
-    expect(tabNames()).toEqual(['Эйзенхауэр', 'Канбан', 'Pomodoro', 'Пространство', 'Карточки']);
+    expect(tabNames()).toEqual([
+      'Эйзенхауэр',
+      'Канбан',
+      'Бэклог',
+      'Pomodoro',
+      'Пространство',
+      'Карточки',
+    ]);
   });
 
   it('creates a workspace with chosen tabs in a chosen order and switches to it', async () => {
@@ -43,6 +50,7 @@ describe('workspaces', () => {
     await user.clear(name);
     await user.type(name, 'Учёба');
     await user.click(within(dialog).getByRole('checkbox', { name: 'Эйзенхауэр' }));
+    await user.click(within(dialog).getByRole('checkbox', { name: 'Бэклог' }));
     await user.click(within(dialog).getByRole('checkbox', { name: 'Pomodoro' }));
     for (let i = 0; i < 4; i++) {
       await user.click(within(dialog).getByRole('button', { name: 'Выше: Карточки' }));
@@ -55,7 +63,7 @@ describe('workspaces', () => {
     expect(screen.getByRole('tab', { name: 'Карточки' })).toHaveAttribute('aria-selected', 'true');
     await waitFor(() =>
       expect(saved().settings.workspaces.map((w) => [w.name, w.tabs])).toEqual([
-        ['Основное', ['matrix', 'kanban', 'pomodoro', 'space', 'cards']],
+        ['Основное', ['matrix', 'kanban', 'backlog', 'pomodoro', 'space', 'cards']],
         ['Учёба', ['cards', 'kanban', 'space']],
       ]),
     );
@@ -67,7 +75,7 @@ describe('workspaces', () => {
     await user.click(await screen.findByRole('button', { name: 'Основное' }));
     await user.click(screen.getByRole('button', { name: 'Настроить «Основное»…' }));
     const dialog = screen.getByRole('dialog');
-    for (const tab of ['Эйзенхауэр', 'Канбан', 'Pomodoro', 'Пространство', 'Карточки']) {
+    for (const tab of ['Эйзенхауэр', 'Канбан', 'Бэклог', 'Pomodoro', 'Пространство', 'Карточки']) {
       await user.click(within(dialog).getByRole('checkbox', { name: tab }));
     }
     await user.click(within(dialog).getByRole('button', { name: 'Сохранить' }));
@@ -95,7 +103,8 @@ describe('workspaces', () => {
 
     await user.click(screen.getByRole('button', { name: 'Работа' }));
     await user.click(screen.getByRole('button', { name: 'Основное' }));
-    expect(tabNames()).toEqual(['Эйзенхауэр', 'Канбан']);
+    // Schema 5 adds «Бэклог» to «Основное» after «Канбан».
+    expect(tabNames()).toEqual(['Эйзенхауэр', 'Канбан', 'Бэклог']);
     expect(screen.getByRole('tab', { name: 'Канбан' })).toHaveAttribute('aria-selected', 'true');
 
     await user.click(screen.getByRole('button', { name: 'Основное' }));

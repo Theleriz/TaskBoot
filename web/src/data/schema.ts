@@ -9,10 +9,12 @@ import { SchemaTooNewError } from './errors.ts';
  * 3 — phase 1.5: flashcards — `decks`, `cards`, `reviews`, and `settings.newCardsPerDay`.
  * 4 — phase 2.1: `settings.workspaces`, daily `activity` counters, `doneAt` in tasks.
  *     Done tasks get `doneAt: null` (the time is unknown); counting starts with this version.
+ * 5 — phase 2.3: `goals`, and `backlog` / `goalId` in tasks. The default workspace
+ *     «Основное» gets the new «Бэклог» tab; other workspaces keep their tabs.
  *
  * To change the format: bump this number and add a migration from the previous version.
  */
-export const CURRENT_SCHEMA_VERSION = 4;
+export const CURRENT_SCHEMA_VERSION = 5;
 
 type Data = Record<string, unknown>;
 
@@ -32,7 +34,30 @@ const MIGRATIONS: Record<number, (data: Data) => Data> = {
   2: (data) => ({ ...data, schemaVersion: 3, decks: [], cards: [], reviews: [] }),
   // Workspaces get the default set in normalization; doneAt of old tasks stays unknown.
   3: (data) => ({ ...data, schemaVersion: 4, activity: {} }),
+  // Tasks get `backlog: false` and no goal in normalization.
+  4: (data) => {
+    const next: Data = { ...data, schemaVersion: 5, goals: [] };
+    const settings = data.settings;
+    if (typeof settings === 'object' && settings !== null && !Array.isArray(settings)) {
+      const s = settings as Data;
+      if (Array.isArray(s.workspaces)) {
+        next.settings = { ...s, workspaces: s.workspaces.map(withBacklogTab) };
+      }
+    }
+    return next;
+  },
 };
+
+/** «Основное» gets the backlog tab right after «Канбан» (or at the end without it). */
+function withBacklogTab(w: unknown): unknown {
+  if (typeof w !== 'object' || w === null) return w;
+  const ws = w as Data;
+  if (ws.id !== 'main' || !Array.isArray(ws.tabs) || ws.tabs.includes('backlog')) return w;
+  const tabs = [...(ws.tabs as unknown[])];
+  const kanban = tabs.indexOf('kanban');
+  tabs.splice(kanban === -1 ? tabs.length : kanban + 1, 0, 'backlog');
+  return { ...ws, tabs };
+}
 
 export function schemaVersionOf(data: Data): number {
   const v = data.schemaVersion;

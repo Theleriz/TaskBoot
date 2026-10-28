@@ -1720,8 +1720,149 @@ button.link-main {
   font-weight: 600;
 }
 
+/* ---------- Бэклог и цели (фаза 2.3) ---------- */
+.backlog-view {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 380px);
+  gap: 16px;
+  max-width: 1200px;
+  margin: 18px auto 16px;
+  align-items: start;
+}
+.backlog-view .box-head {
+  flex-wrap: wrap;
+}
+.backlog-filter {
+  width: auto;
+  max-width: 240px;
+  padding: 4px 8px;
+  font-size: 13px;
+}
+.backlog-list {
+  margin-top: 12px;
+}
+.backlog-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px 6px 4px 4px;
+}
+.backlog-open {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.backlog-open:hover {
+  background: var(--hover);
+}
+.backlog-title {
+  overflow-wrap: anywhere;
+}
+.goal-badge {
+  display: inline-block;
+  max-width: 220px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--rest-soft);
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.goal {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px 10px;
+}
+.goal-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+.goal-open {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  padding: 4px 6px;
+  margin-left: -6px;
+  border-radius: 6px;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.goal-open:hover {
+  background: var(--hover);
+}
+.goal-open[aria-pressed='true'] {
+  background: var(--accent-soft);
+}
+.goal .progress {
+  margin: 0 0 6px;
+}
+.goal-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 2px 12px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.goal-meta .overdue {
+  color: var(--danger);
+  font-weight: 600;
+}
+.goal.complete .goal-meta span:first-child {
+  color: var(--rest);
+  font-weight: 600;
+}
+.goal-desc {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.goal-date {
+  width: auto;
+}
+.selects label:nth-child(3) {
+  grid-column: 1 / -1;
+}
+.backlog-note {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-top: 10px;
+  font-size: 13px;
+}
+
 /* ---------- Узкий экран (N-07, N-26) ---------- */
 @media (max-width: 720px) {
+  .backlog-view {
+    grid-template-columns: 1fr;
+  }
   html,
   body {
     height: auto;

@@ -7,6 +7,8 @@ interface Props {
   task: Task;
   /** Notes linked to the task (phase 1.4). */
   notes?: number;
+  /** Title of the task's goal (phase 2.3). */
+  goal?: string;
   /** Where the task is on the other board (stage in the matrix, quadrant in kanban). */
   other: Zone<string> | undefined;
   dragging: boolean;
@@ -20,6 +22,7 @@ interface Props {
 export function Card({
   task,
   notes = 0,
+  goal,
   other,
   dragging,
   onOpen,
@@ -57,6 +60,11 @@ export function Card({
             <span className="badge">
               <span className="dot" style={{ background: other.color }} />
               {other.title}
+            </span>
+          )}
+          {goal && (
+            <span className="badge goal-badge" title={`Цель: ${goal}`}>
+              {goal}
             </span>
           )}
           {/* F-85: detail indicators */}

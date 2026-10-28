@@ -8,6 +8,7 @@ import { WORKSPACE_TABS, type WorkspaceTab } from './data/model.ts';
 export const TAB_TITLES: Record<WorkspaceTab, string> = {
   matrix: 'Эйзенхауэр',
   kanban: 'Канбан',
+  backlog: 'Бэклог',
   pomodoro: 'Pomodoro',
   space: 'Пространство',
   cards: 'Карточки',

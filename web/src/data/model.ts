@@ -29,9 +29,23 @@ export interface Task {
   createdAt: number;
   /** When the task was last moved to "done"; null when it is not done or the time is unknown. */
   doneAt: number | null;
+  /** Put off for later: kept off the boards until taken for today. Always a "todo" task. */
+  backlog: boolean;
+  /** The long-term goal the task works towards, if any. */
+  goalId: string | null;
   description: string;
   checklist: CheckItem[];
   links: LinkItem[];
+}
+
+/** A long-term goal (phase 2.3). Progress is the share of its tasks that are done. */
+export interface Goal {
+  id: string;
+  title: string;
+  description: string;
+  /** Optional deadline, a local calendar day "YYYY-MM-DD". */
+  deadline: string | null;
+  createdAt: number;
 }
 
 /** A folder in the knowledge space (phase 1). Folders nest; `parentId: null` is the root. */
@@ -132,7 +146,14 @@ export const REVIEW_LOG_LIMIT = 20_000;
 /* ---------- Workspaces and activity (phase 2) ---------- */
 
 /** Tabs a workspace can show, in the default order. Settings (the gear) is always available. */
-export const WORKSPACE_TABS = ['matrix', 'kanban', 'pomodoro', 'space', 'cards'] as const;
+export const WORKSPACE_TABS = [
+  'matrix',
+  'kanban',
+  'backlog',
+  'pomodoro',
+  'space',
+  'cards',
+] as const;
 export type WorkspaceTab = (typeof WORKSPACE_TABS)[number];
 
 /** A set of tabs for one purpose ("Учёба", "Работа"). Tasks, notes and cards are shared. */
@@ -202,6 +223,7 @@ export interface Settings {
 export interface AppData {
   schemaVersion: number;
   tasks: Task[];
+  goals: Goal[];
   folders: Folder[];
   notes: Note[];
   secrets: Secret[];

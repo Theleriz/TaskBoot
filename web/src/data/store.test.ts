@@ -96,6 +96,8 @@ describe('IndexedDB store', () => {
       status: 'doing',
       createdAt: 1,
       doneAt: null,
+      backlog: false,
+      goalId: null,
       description: '',
       checklist: [],
       links: [],

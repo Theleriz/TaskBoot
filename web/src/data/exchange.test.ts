@@ -13,6 +13,7 @@ describe('schema migrations', () => {
       cards: [],
       reviews: [],
       activity: {},
+      goals: [],
       schemaVersion: CURRENT_SCHEMA_VERSION,
     });
   });
