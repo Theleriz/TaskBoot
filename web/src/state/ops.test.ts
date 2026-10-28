@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { createEmptyData } from '../data/normalize.ts';
 import {
+  addWorkspace,
+  deleteWorkspace,
+  updateWorkspace,
+  workspaceProblem,
   recordPomodoro,
   addCard,
   addDeck,
@@ -351,5 +355,28 @@ describe('activity counters (phase 2)', () => {
     recordPomodoro(d, 45, day(10));
     recordPomodoro(d, 25, day(11));
     expect(d.activity['2026-10-28']).toMatchObject({ pomodoroSessions: 2, pomodoroMinutes: 70 });
+  });
+});
+
+describe('workspaces', () => {
+  it('creates workspaces with known tabs, each once, in order', () => {
+    const d = createEmptyData();
+    expect(workspaceProblem({ name: ' ', tabs: ['matrix'] })).toMatch(/название/);
+    expect(workspaceProblem({ name: 'Учёба', tabs: [] })).toMatch(/вкладку/);
+    expect(addWorkspace(d, { name: ' Учёба ', tabs: ['cards', 'kanban', 'cards'] }, 'w')).toBe(
+      true,
+    );
+    expect(d.settings.workspaces[1]).toEqual({ id: 'w', name: 'Учёба', tabs: ['cards', 'kanban'] });
+  });
+
+  it('edits a workspace and keeps at least one', () => {
+    const d = createEmptyData();
+    addWorkspace(d, { name: 'A', tabs: ['matrix'] }, 'a');
+    expect(updateWorkspace(d, 'a', { name: 'B', tabs: [] })).toBe(false);
+    expect(updateWorkspace(d, 'a', { name: 'B', tabs: ['pomodoro', 'matrix'] })).toBe(true);
+    expect(d.settings.workspaces[1]).toMatchObject({ name: 'B', tabs: ['pomodoro', 'matrix'] });
+    expect(deleteWorkspace(d, 'main')).toBe(true);
+    expect(deleteWorkspace(d, 'a')).toBe(false);
+    expect(d.settings.workspaces.map((w) => w.id)).toEqual(['a']);
   });
 });

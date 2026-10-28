@@ -16,6 +16,8 @@ import {
   DURATION_LIMITS,
   NEW_CARDS_LIMITS,
   REVIEW_LOG_LIMIT,
+  WORKSPACE_TABS,
+  type WorkspaceTab,
 } from '../data/model.ts';
 import { normalizeUrl } from '../data/url.ts';
 
@@ -508,4 +510,45 @@ export function setNewCardsPerDay(d: AppData, value: number) {
 export function recordPomodoro(d: AppData, minutes: number, now: number) {
   countActivity(d, now, 'pomodoroSessions');
   countActivity(d, now, 'pomodoroMinutes', Math.max(0, Math.round(minutes)));
+}
+
+/* ---------- Workspaces (phase 2.2) ---------- */
+
+export interface WorkspaceInput {
+  name: string;
+  tabs: readonly WorkspaceTab[];
+}
+
+/** Known tabs only, each once, in the given order. */
+const cleanTabs = (tabs: readonly WorkspaceTab[]) => [
+  ...new Set(tabs.filter((t) => WORKSPACE_TABS.includes(t))),
+];
+
+/** Why a workspace cannot be saved, or null when it can. */
+export function workspaceProblem(input: WorkspaceInput): string | null {
+  if (!input.name.trim()) return 'Введите название рабочего пространства';
+  if (cleanTabs(input.tabs).length === 0) return 'Выберите хотя бы одну вкладку';
+  return null;
+}
+
+export function addWorkspace(d: AppData, input: WorkspaceInput, id: string): boolean {
+  if (workspaceProblem(input)) return false;
+  d.settings.workspaces.push({ id, name: input.name.trim(), tabs: cleanTabs(input.tabs) });
+  return true;
+}
+
+export function updateWorkspace(d: AppData, id: string, input: WorkspaceInput): boolean {
+  const ws = d.settings.workspaces.find((w) => w.id === id);
+  if (!ws || workspaceProblem(input)) return false;
+  ws.name = input.name.trim();
+  ws.tabs = cleanTabs(input.tabs);
+  return true;
+}
+
+/** The last workspace stays: there is always at least one. */
+export function deleteWorkspace(d: AppData, id: string): boolean {
+  if (d.settings.workspaces.length <= 1) return false;
+  const before = d.settings.workspaces.length;
+  d.settings.workspaces = d.settings.workspaces.filter((w) => w.id !== id);
+  return d.settings.workspaces.length < before;
 }
