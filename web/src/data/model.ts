@@ -27,6 +27,8 @@ export interface Task {
   status: Status;
   /** Unix time in milliseconds. */
   createdAt: number;
+  /** When the task was last moved to "done"; null when it is not done or the time is unknown. */
+  doneAt: number | null;
   description: string;
   checklist: CheckItem[];
   links: LinkItem[];
@@ -127,6 +129,45 @@ export interface ReviewEntry {
 /** The review history is capped: the oldest entries go first. About 100 bytes each. */
 export const REVIEW_LOG_LIMIT = 20_000;
 
+/* ---------- Workspaces and activity (phase 2) ---------- */
+
+/** Tabs a workspace can show, in the default order. Settings (the gear) is always available. */
+export const WORKSPACE_TABS = ['matrix', 'kanban', 'pomodoro', 'space', 'cards'] as const;
+export type WorkspaceTab = (typeof WORKSPACE_TABS)[number];
+
+/** A set of tabs for one purpose ("Учёба", "Работа"). Tasks, notes and cards are shared. */
+export interface Workspace {
+  id: string;
+  name: string;
+  /** At least one tab, in the order shown. */
+  tabs: WorkspaceTab[];
+}
+
+/** The workspace every user starts with: all tabs, as before workspaces existed. */
+export const DEFAULT_WORKSPACE: Workspace = {
+  id: 'main',
+  name: 'Основное',
+  tabs: [...WORKSPACE_TABS],
+};
+
+/** Activity of one day, for statistics. Card reviews come from the review history instead. */
+export interface DayActivity {
+  tasksCreated: number;
+  tasksDone: number;
+  pomodoroSessions: number;
+  pomodoroMinutes: number;
+  /** Notes created or edited that day, each note counted once. */
+  notesEdited: number;
+}
+
+export const DAY_ACTIVITY_FIELDS = [
+  'tasksCreated',
+  'tasksDone',
+  'pomodoroSessions',
+  'pomodoroMinutes',
+  'notesEdited',
+] as const satisfies readonly (keyof DayActivity)[];
+
 export const THEME_MODES = ['system', 'light', 'dark', 'custom', 'random', 'saved'] as const;
 export type ThemeMode = (typeof THEME_MODES)[number];
 
@@ -152,6 +193,8 @@ export interface Settings {
   restMinutes: number;
   /** New flashcards to learn per day, per deck. */
   newCardsPerDay: number;
+  /** At least one; the first is the default. */
+  workspaces: Workspace[];
   theme: ThemeSettings;
   themes: SavedTheme[];
 }
@@ -165,6 +208,8 @@ export interface AppData {
   decks: Deck[];
   cards: Flashcard[];
   reviews: ReviewEntry[];
+  /** Activity by local calendar day, "YYYY-MM-DD". */
+  activity: Record<string, DayActivity>;
   settings: Settings;
 }
 

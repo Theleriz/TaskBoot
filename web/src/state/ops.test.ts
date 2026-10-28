@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createEmptyData } from '../data/normalize.ts';
 import {
+  recordPomodoro,
   addCard,
   addDeck,
   answerCard,
@@ -54,6 +55,7 @@ describe('ops', () => {
         quadrant: 'q2',
         status: 'todo',
         createdAt: 5,
+        doneAt: null,
         description: '',
         checklist: [],
         links: [],
@@ -63,8 +65,8 @@ describe('ops', () => {
 
   it('moves only one axis at a time (F-05, F-06)', () => {
     const d = withTask();
-    moveTask(d, 't1', { quadrant: 'q1' });
-    moveTask(d, 't1', { status: 'done' });
+    moveTask(d, 't1', { quadrant: 'q1' }, 2);
+    moveTask(d, 't1', { status: 'done' }, 3);
     expect(d.tasks[0]).toMatchObject({ quadrant: 'q1', status: 'done' });
   });
 
@@ -302,5 +304,52 @@ describe('flashcards', () => {
     expect(d.settings.newCardsPerDay).toBe(0);
     setNewCardsPerDay(d, 12.6);
     expect(d.settings.newCardsPerDay).toBe(13);
+  });
+});
+
+describe('activity counters (phase 2)', () => {
+  // 28 October 2026, local time.
+  const day = (h: number, d = 28) => new Date(2026, 9, d, h, 0).getTime();
+
+  it('counts created and done tasks, and takes a "done" back when the task is reopened', () => {
+    const d = createEmptyData();
+    addTask(d, 'A', 'a', day(9));
+    addTask(d, 'B', 'b', day(9));
+    moveTask(d, 'a', { status: 'doing' }, day(10));
+    moveTask(d, 'a', { status: 'done' }, day(11));
+    moveTask(d, 'b', { status: 'done' }, day(11));
+    expect(d.tasks[0]?.doneAt).toBe(day(11));
+    expect(d.activity['2026-10-28']).toMatchObject({ tasksCreated: 2, tasksDone: 2 });
+
+    // Reopened the next day: the count goes away from the day it was made.
+    moveTask(d, 'b', { status: 'todo' }, day(9, 29));
+    expect(d.tasks[1]?.doneAt).toBeNull();
+    expect(d.activity['2026-10-28']?.tasksDone).toBe(1);
+    expect(d.activity['2026-10-29']).toBeUndefined();
+
+    // Moving within "done" or along the other axis changes nothing.
+    moveTask(d, 'a', { status: 'done' }, day(12));
+    moveTask(d, 'a', { quadrant: 'q1' }, day(12));
+    expect(d.activity['2026-10-28']?.tasksDone).toBe(1);
+    expect(d.tasks[0]?.doneAt).toBe(day(11));
+  });
+
+  it('counts each note once per day, however many edits', () => {
+    const d = createEmptyData();
+    addNote(d, 'N', '', 'n', day(9));
+    setNoteText(d, 'n', 'a', day(10));
+    setNoteText(d, 'n', 'ab', day(11));
+    renameNote(d, 'n', 'New', day(12));
+    expect(d.activity['2026-10-28']?.notesEdited).toBe(1);
+    setNoteText(d, 'n', 'abc', day(9, 29));
+    setNoteText(d, 'n', 'abcd', day(10, 29));
+    expect(d.activity['2026-10-29']?.notesEdited).toBe(1);
+  });
+
+  it('records finished work sessions of the timer', () => {
+    const d = createEmptyData();
+    recordPomodoro(d, 45, day(10));
+    recordPomodoro(d, 25, day(11));
+    expect(d.activity['2026-10-28']).toMatchObject({ pomodoroSessions: 2, pomodoroMinutes: 70 });
   });
 });

@@ -105,7 +105,9 @@ export function DetailsPanel({
                   className="select"
                   value={task.quadrant}
                   onChange={(e) =>
-                    apply((d) => moveTask(d, task.id, { quadrant: e.target.value as Quadrant }))
+                    apply((d) =>
+                      moveTask(d, task.id, { quadrant: e.target.value as Quadrant }, Date.now()),
+                    )
                   }
                 >
                   {QUADRANT_ZONES.map((z) => (
@@ -120,9 +122,11 @@ export function DetailsPanel({
                 <select
                   className="select"
                   value={task.status}
-                  onChange={(e) =>
-                    apply((d) => moveTask(d, task.id, { status: e.target.value as Status }))
-                  }
+                  onChange={(e) => {
+                    const now = Date.now();
+                    const status = e.target.value as Status;
+                    apply((d) => moveTask(d, task.id, { status }, now));
+                  }}
                 >
                   {STAGE_ZONES.map((z) => (
                     <option key={z.key} value={z.key}>

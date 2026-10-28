@@ -12,6 +12,7 @@ describe('schema migrations', () => {
       decks: [],
       cards: [],
       reviews: [],
+      activity: {},
       schemaVersion: CURRENT_SCHEMA_VERSION,
     });
   });

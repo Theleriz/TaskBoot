@@ -95,6 +95,7 @@ describe('IndexedDB store', () => {
       quadrant: 'q1',
       status: 'doing',
       createdAt: 1,
+      doneAt: null,
       description: '',
       checklist: [],
       links: [],

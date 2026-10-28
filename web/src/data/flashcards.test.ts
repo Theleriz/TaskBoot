@@ -73,7 +73,6 @@ describe('scheduler (FSRS)', () => {
 describe('schema 3', () => {
   it('adds empty flashcard lists and the daily limit to older data', () => {
     expect(migrate({ schemaVersion: 2, notes: [] })).toMatchObject({
-      schemaVersion: 3,
       decks: [],
       cards: [],
       reviews: [],

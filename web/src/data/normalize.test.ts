@@ -50,6 +50,7 @@ describe('normalizeTask', () => {
       quadrant: 'q3',
       status: 'done',
       createdAt: 5,
+      doneAt: null,
       description: '',
       checklist: [],
       links: [],
