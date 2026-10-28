@@ -18,7 +18,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <Prefer32Bit>false</Prefer32Bit>
-    <Version>2.2.0</Version>
+    <Version>2.3.0-beta.1</Version>
     <Product>Task Tracker</Product>
     <AssemblyTitle>Task Tracker</AssemblyTitle>
     <Copyright></Copyright>
