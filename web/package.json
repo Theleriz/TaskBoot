@@ -1,7 +1,7 @@
 {
   "name": "task-tracker-web",
   "private": true,
-  "version": "2.1.1",
+  "version": "2.2.0",
   "description": "Task Tracker web app - the primary codebase (also hosted by the Windows WebView2 shell).",
   "type": "module",
   "engines": {
@@ -30,7 +30,8 @@
     "markdown-it": "14.3.3",
     "minisearch": "7.2.0",
     "react": "19.3.1",
-    "react-dom": "19.3.1"
+    "react-dom": "19.3.1",
+    "ts-fsrs": "5.4.2"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

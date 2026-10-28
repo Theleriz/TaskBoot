@@ -1,6 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { createEmptyData } from '../data/normalize.ts';
 import {
+  addCard,
+  addDeck,
+  answerCard,
+  cardProblem,
+  deleteCard,
+  deleteDeck,
+  deleteNote,
+  renameDeck,
+  resetCard,
+  setNewCardsPerDay,
+  updateCard,
   addChecklistItem,
   addFolder,
   addNote,
@@ -199,5 +210,97 @@ describe('links between notes and tasks', () => {
     unlinkNoteTask(d, 'a', 't1');
     expect(d.notes[0]?.taskIds).toEqual(['t2']);
     expect(notesOfTask(d, 't1')).toEqual([]);
+  });
+});
+
+describe('flashcards', () => {
+  const NOW = 1_000_000;
+  function data() {
+    const d = createEmptyData();
+    addDeck(d, 'Колода', 'd1', NOW);
+    addDeck(d, 'Другая', 'd2', NOW);
+    addNote(d, 'Источник', '', 'n1', NOW);
+    return d;
+  }
+
+  it('creates decks and cards only with valid input', () => {
+    const d = data();
+    expect(addDeck(d, '  ', 'x', NOW)).toBe(false);
+    expect(renameDeck(d, 'd1', ' Слова ')).toBe(true);
+    expect(d.decks[0]?.name).toBe('Слова');
+    expect(cardProblem({ kind: 'basic', front: ' ' })).toBe('Введите вопрос');
+    expect(cardProblem({ kind: 'cloze', front: 'без пропусков' })).toMatch(/пропуск/);
+    expect(addCard(d, { deckId: 'missing', kind: 'basic', front: 'Q', back: '' }, 'c0', NOW)).toBe(
+      false,
+    );
+    expect(
+      addCard(
+        d,
+        { deckId: 'd1', kind: 'cloze', front: '{{c1::a}} {{c2::b}}', back: '', noteId: 'n1' },
+        'c1',
+        NOW,
+      ),
+    ).toBe(true);
+    expect(d.cards[0]).toMatchObject({ noteId: 'n1', kind: 'cloze' });
+    expect(Object.keys(d.cards[0]!.schedules)).toEqual(['1', '2']);
+  });
+
+  it('keeps progress when a card is edited and resets only what changed', () => {
+    const d = data();
+    addCard(d, { deckId: 'd1', kind: 'cloze', front: '{{c1::a}} {{c2::b}}', back: '' }, 'c', NOW);
+    answerCard(d, 'c', '1', 3, NOW);
+    const learned = d.cards[0]!.schedules['1'];
+    expect(
+      updateCard(
+        d,
+        'c',
+        { deckId: 'd2', kind: 'cloze', front: '{{c1::a!}} {{c3::c}}', back: 'x' },
+        NOW + 1,
+      ),
+    ).toBe(true);
+    const card = d.cards[0]!;
+    expect(card).toMatchObject({ deckId: 'd2', back: 'x', updatedAt: NOW + 1 });
+    expect(Object.keys(card.schedules)).toEqual(['1', '3']);
+    expect(card.schedules['1']).toEqual(learned);
+    expect(card.schedules['3']?.state).toBe(0);
+    // Switching the kind starts over.
+    updateCard(d, 'c', { deckId: 'd2', kind: 'basic', front: 'Q', back: 'A' }, NOW + 2);
+    expect(card.schedules['0']?.state).toBe(0);
+    resetCard(d, 'c', NOW + 3);
+    expect(card.schedules['0']?.due).toBe(NOW + 3);
+  });
+
+  it('logs answers and removes history with the card or the deck', () => {
+    const d = data();
+    addCard(d, { deckId: 'd1', kind: 'basic', front: 'Q', back: 'A' }, 'a', NOW);
+    addCard(d, { deckId: 'd2', kind: 'basic', front: 'Q2', back: 'A2' }, 'b', NOW);
+    expect(answerCard(d, 'a', '0', 3, NOW)).toBe(true);
+    expect(answerCard(d, 'a', '9', 3, NOW)).toBe(false);
+    answerCard(d, 'b', '0', 1, NOW);
+    expect(d.reviews).toEqual([
+      { cardId: 'a', slot: '0', rating: 3, state: 0, at: NOW },
+      { cardId: 'b', slot: '0', rating: 1, state: 0, at: NOW },
+    ]);
+    deleteCard(d, 'b');
+    expect(d.reviews.map((r) => r.cardId)).toEqual(['a']);
+    deleteDeck(d, 'd1');
+    expect(d.cards).toEqual([]);
+    expect(d.reviews).toEqual([]);
+    expect(d.decks.map((x) => x.id)).toEqual(['d2']);
+  });
+
+  it('keeps cards when their note is deleted', () => {
+    const d = data();
+    addCard(d, { deckId: 'd1', kind: 'basic', front: 'Q', back: '', noteId: 'n1' }, 'c', NOW);
+    deleteNote(d, 'n1');
+    expect(d.cards[0]?.noteId).toBeNull();
+  });
+
+  it('clamps the daily limit of new cards', () => {
+    const d = data();
+    setNewCardsPerDay(d, -3);
+    expect(d.settings.newCardsPerDay).toBe(0);
+    setNewCardsPerDay(d, 12.6);
+    expect(d.settings.newCardsPerDay).toBe(13);
   });
 });

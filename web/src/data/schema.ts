@@ -6,10 +6,11 @@ import { SchemaTooNewError } from './errors.ts';
  * 1 — phase 0.3: the same fields plus `schemaVersion`.
  * 2 — phase 1.1: knowledge space — `folders`, and `folderId` / `taskIds` in notes.
  *     Existing notes go to the root folder without links (filled in by normalization).
+ * 3 — phase 1.5: flashcards — `decks`, `cards`, `reviews`, and `settings.newCardsPerDay`.
  *
  * To change the format: bump this number and add a migration from the previous version.
  */
-export const CURRENT_SCHEMA_VERSION = 2;
+export const CURRENT_SCHEMA_VERSION = 3;
 
 type Data = Record<string, unknown>;
 
@@ -25,6 +26,8 @@ const MIGRATIONS: Record<number, (data: Data) => Data> = {
     }
     return next;
   },
+  // Nothing to convert: the new lists start empty, the new setting gets its default.
+  2: (data) => ({ ...data, schemaVersion: 3, decks: [], cards: [], reviews: [] }),
 };
 
 export function schemaVersionOf(data: Data): number {

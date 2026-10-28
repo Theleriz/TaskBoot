@@ -97,3 +97,31 @@ describe('long notes', () => {
     }
   }, 30_000);
 });
+
+describe('cloze gaps', () => {
+  const text = 'Столица {{c1::Франции::страна}} — {{c2::**Париж**}}, формула {{c3::$x^2$}}';
+
+  it('hides the asked gap and shows the others as context', () => {
+    const html = renderMarkdown(text, { cloze: { slot: '2', reveal: false } });
+    expect(html).toContain('<span class="cloze-blank">[…]</span>');
+    expect(html).not.toContain('Париж');
+    expect(html).toContain('<span class="cloze">Франции</span>');
+    expect(html).toContain('class="katex"');
+    expect(renderMarkdown(text, { cloze: { slot: '1', reveal: false } })).toContain(
+      '<span class="cloze-blank">[страна]</span>',
+    );
+  });
+
+  it('highlights the answer when revealed, with Markdown inside', () => {
+    const html = renderMarkdown(text, { cloze: { slot: '2', reveal: true } });
+    expect(html).toContain('<span class="cloze cloze-answer"><strong>Париж</strong></span>');
+  });
+
+  it('shows all answers in a note preview and escapes hints', () => {
+    const html = renderMarkdown('{{c1::a::<b>x</b>}}');
+    expect(html).toContain('<span class="cloze">a</span>');
+    expect(renderMarkdown('{{c1::a::<b>}}', { cloze: { slot: '1', reveal: false } })).toContain(
+      '[&lt;b&gt;]',
+    );
+  });
+});

@@ -1,4 +1,5 @@
-import { Suspense, lazy, useState } from 'react';
+import { Suspense, lazy, useRef, useState } from 'react';
+import { draftFromNote } from '../cards/fromNote.ts';
 import type { Note } from '../../data/model.ts';
 import { useAppData } from '../../state/hooks.ts';
 import { deleteNote, moveNote, renameNote, setNoteText } from '../../state/ops.ts';
@@ -10,6 +11,9 @@ import { NOTE_MODES, type NoteMode } from './modes.ts';
 import { folderOptions } from './tree.ts';
 
 const NoteEditor = lazy(() => import('./NoteEditor.tsx'));
+const CardDialog = lazy(() =>
+  import('../cards/CardDialog.tsx').then((m) => ({ default: m.CardDialog })),
+);
 const NotePreview = lazy(() => import('./NotePreview.tsx'));
 
 const ROOT = '';
@@ -35,6 +39,9 @@ export function NotePane({
 }) {
   const { data, apply } = useAppData();
   const [title, setTitle] = useState(note.title);
+  // The editor selection, for "make a flashcard"; a ref, as it changes with every cursor move.
+  const selection = useRef<Jump | null>(null);
+  const [cardDraft, setCardDraft] = useState<ReturnType<typeof draftFromNote> | null>(null);
 
   const commitTitle = () => {
     const now = Date.now();
@@ -99,6 +106,15 @@ export function NotePane({
             ))}
           </select>
         </label>
+        <button
+          type="button"
+          className="btn small"
+          title="Карточка из выделенного текста (или пустая, если ничего не выделено)"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => setCardDraft(draftFromNote(data, note.id, note.text, selection.current))}
+        >
+          В карточку
+        </button>
         <span className="muted note-saved">
           Сохраняется автоматически · изменена {formatDate(note.updatedAt)}
         </span>
@@ -123,6 +139,9 @@ export function NotePane({
             <NoteEditor
               initialText={note.text}
               jump={jump}
+              onSelect={(range) => {
+                selection.current = range;
+              }}
               onChange={(text) => {
                 const now = Date.now();
                 apply((d) => setNoteText(d, note.id, text, now));
@@ -136,6 +155,16 @@ export function NotePane({
           </Suspense>
         )}
       </div>
+      {cardDraft && (
+        <Suspense fallback={null}>
+          <CardDialog
+            noteId={note.id}
+            draft={cardDraft.draft}
+            presets={cardDraft.presets}
+            onClose={() => setCardDraft(null)}
+          />
+        </Suspense>
+      )}
     </section>
   );
 }

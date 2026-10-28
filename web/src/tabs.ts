@@ -5,6 +5,7 @@ export const TABS = [
   { id: 'kanban', title: 'Канбан' },
   { id: 'pomodoro', title: 'Pomodoro' },
   { id: 'space', title: 'Пространство' },
+  { id: 'cards', title: 'Карточки' },
 ] as const;
 
 export type TabId = (typeof TABS)[number]['id'];

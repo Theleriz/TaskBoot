@@ -9,6 +9,9 @@ describe('schema migrations', () => {
     expect(migrate({ tasks: [] })).toEqual({
       tasks: [],
       folders: [],
+      decks: [],
+      cards: [],
+      reviews: [],
       schemaVersion: CURRENT_SCHEMA_VERSION,
     });
   });
@@ -20,7 +23,7 @@ describe('schema migrations', () => {
       notes: [{ id: 'n1', title: 'Old note', text: 'body', createdAt: 5, updatedAt: 6 }],
     };
     expect(migrate(v1)).toMatchObject({
-      schemaVersion: 2,
+      schemaVersion: CURRENT_SCHEMA_VERSION,
       folders: [],
       notes: [{ id: 'n1', title: 'Old note', text: 'body', folderId: null, taskIds: [] }],
     });

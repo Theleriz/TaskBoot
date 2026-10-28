@@ -1344,6 +1344,267 @@ button.link-main {
   transform: translate(-50%, 0);
 }
 
+/* ---------- Карточки (фаза 1.5) ---------- */
+.cards-view {
+  max-width: 900px;
+  margin: 18px auto 16px;
+  display: grid;
+  gap: 16px;
+}
+.decks .box-head {
+  flex-wrap: wrap;
+}
+.deck-counts {
+  display: inline-flex;
+  gap: 8px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.dc {
+  min-width: 18px;
+  text-align: right;
+}
+.dc.new {
+  color: var(--q2);
+}
+.dc.learning {
+  color: var(--work);
+}
+.dc.review {
+  color: var(--rest);
+}
+.deck-row,
+.card-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px 8px 4px 4px;
+}
+.deck-open,
+.card-row-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: 6px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.deck-open:hover,
+.card-row-main:hover {
+  background: var(--hover);
+}
+.deck-name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.deck-size,
+.card-due {
+  font-size: 12px;
+  white-space: nowrap;
+}
+.deck-rename {
+  flex: 1;
+  min-width: 0;
+}
+.new-per-day {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  font-size: 13px;
+}
+.new-per-day .input {
+  width: 90px;
+}
+.study-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.study-head h2 {
+  font-size: 17px;
+  font-weight: 600;
+}
+.card-kind {
+  flex: none;
+  font-size: 12px;
+  color: var(--muted);
+  min-width: 92px;
+}
+.card-front {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.card-list {
+  margin-top: 14px;
+}
+.card-form {
+  display: grid;
+  gap: 10px;
+  background: var(--card);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 12px;
+}
+.card-edit {
+  list-style: none;
+}
+.card-field {
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+}
+.card-field-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--muted);
+}
+.card-deck {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.card-deck .select {
+  width: auto;
+  max-width: 260px;
+  padding: 4px 8px;
+}
+.card-new-deck {
+  width: auto;
+  flex: 1;
+  min-width: 160px;
+}
+
+/* Диалог «Карточка из заметки» */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: start center;
+  padding: 8vh 16px 16px;
+  background: var(--overlay);
+  overflow: auto;
+}
+.modal {
+  width: min(640px, 100%);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 14px 16px 16px;
+}
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.modal-head h2 {
+  font-size: 17px;
+  font-weight: 600;
+}
+.modal .card-form {
+  border-color: var(--border);
+}
+
+/* Повторение */
+.study-card {
+  min-height: 200px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card);
+  padding: 8px 4px;
+}
+.study-face.md {
+  border: 0;
+  background: transparent;
+  font-size: 17px;
+  text-align: center;
+}
+.study-face.md-empty {
+  border: 0;
+}
+.study-divider {
+  border: 0;
+  border-top: 1px dashed var(--border-strong);
+  margin: 4px 24px;
+}
+.study-source {
+  margin-top: 10px;
+}
+.study-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+.study-show {
+  min-width: 220px;
+  padding: 10px 18px;
+}
+.btn.answer {
+  display: grid;
+  justify-items: center;
+  min-width: 110px;
+  padding: 8px 14px;
+}
+.answer-when {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 400;
+}
+.btn.answer.again {
+  border-color: var(--work);
+}
+.btn.answer.hard {
+  border-color: var(--q3);
+}
+.btn.answer.good {
+  border-color: var(--rest);
+}
+.btn.answer.easy {
+  border-color: var(--q2);
+}
+.study-done {
+  text-align: center;
+  padding: 30px 12px;
+}
+.study-done-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 6px;
+}
+.cloze-blank {
+  color: var(--accent);
+  font-weight: 700;
+}
+.cloze-answer {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-radius: 4px;
+  padding: 0 3px;
+  font-weight: 600;
+}
+
 /* ---------- Узкий экран (N-07, N-26) ---------- */
 @media (max-width: 720px) {
   html,

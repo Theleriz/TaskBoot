@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Suspense, lazy, useState } from 'react';
 import { Board } from './features/boards/Board.tsx';
 import { DetailsPanel } from './features/details/DetailsPanel.tsx';
 import { PomodoroProvider } from './features/pomodoro/PomodoroProvider.tsx';
@@ -19,6 +19,11 @@ import { StatusBanner } from './ui/StatusBanner.tsx';
 import { ToastProvider } from './ui/Toast.tsx';
 
 const TAB_KEY = 'taskTracker.tab';
+
+// Flashcards load with their tab: the boards do not need them.
+const CardsView = lazy(() =>
+  import('./features/cards/CardsView.tsx').then((m) => ({ default: m.CardsView })),
+);
 
 function Shell({ prefs }: { prefs: Storage | null }) {
   const { data, load } = useAppData();
@@ -120,6 +125,13 @@ function Shell({ prefs }: { prefs: Storage | null }) {
               openNoteId={noteToOpen}
               onOpenTask={setDetailsId}
             />
+          </section>
+        )}
+        {view === 'cards' && (
+          <section className="view scroll" role="tabpanel" aria-label="Карточки">
+            <Suspense fallback={null}>
+              <CardsView onOpenNote={openNote} />
+            </Suspense>
           </section>
         )}
         {view === 'settings' && (
