@@ -70,6 +70,121 @@ h4 {
   background: var(--surface);
   border-bottom: 1px solid var(--border);
 }
+.top-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+/* Рабочие пространства (фаза 2.2) */
+.ws-switcher {
+  position: relative;
+  flex: none;
+}
+.ws-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 200px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  border-radius: 8px;
+  padding: 6px 8px 6px 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ws-button:hover {
+  background: var(--hover);
+}
+/* A dropdown arrow: down when closed, up when open. */
+.ws-button .tree-chevron {
+  transform: rotate(90deg);
+}
+.ws-button .tree-chevron.open {
+  transform: rotate(-90deg);
+}
+.ws-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ws-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 20;
+  min-width: 240px;
+  display: grid;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+}
+.ws-item {
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.ws-item:hover {
+  background: var(--hover);
+}
+.ws-item[aria-current='true'] {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+.ws-sep {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 6px 4px;
+  width: calc(100% - 8px);
+}
+.tab.outside {
+  font-style: italic;
+  border: 1px dashed var(--border-strong);
+}
+.ws-tabs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.ws-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px 6px 4px 8px;
+}
+.ws-tab.off .ws-tab-label {
+  color: var(--muted);
+}
+.ws-grip {
+  cursor: grab;
+  color: var(--muted);
+  letter-spacing: -3px;
+  user-select: none;
+}
+.ws-tab-label {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: var(--text);
+}
+.ws-tab-label input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+}
 .tabs {
   display: flex;
   gap: 4px;
@@ -1653,6 +1768,29 @@ button.link-main {
   }
   .w-label {
     display: none;
+  }
+  .ws-button {
+    max-width: 160px;
+    padding: 5px 6px 5px 8px;
+  }
+  /* Two rows on a phone: workspace, timer and gear on top; the tabs below, full width. */
+  .topbar {
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+  .top-left {
+    display: contents;
+  }
+  .ws-switcher {
+    order: 0;
+  }
+  .top-right {
+    order: 1;
+    margin-left: auto;
+  }
+  .tabs {
+    order: 2;
+    width: 100%;
   }
   .tab {
     padding: 6px 10px;

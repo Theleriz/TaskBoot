@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useAppData, usePlatform, useToast } from '../../state/hooks.ts';
+import { recordPomodoro } from '../../state/ops.ts';
 import { type PomodoroApi, PomodoroContext } from './context.ts';
 import { chime, unlockAudio } from './sound.ts';
 import { startTicker } from './ticker.ts';
@@ -19,7 +20,7 @@ const AUTO_SWITCH_MS = 400; // F-36 / F-37
 type Timers = Record<TimerKey, Timer>;
 
 export function PomodoroProvider({ children }: { children: ReactNode }) {
-  const { data } = useAppData();
+  const { data, apply } = useAppData();
   const platform = usePlatform();
   const toast = useToast();
 
@@ -46,6 +47,12 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
 
   const notifyFinished = useCallback(
     (finished: TimerKey) => {
+      // Statistics: a finished work session counts with its full length.
+      if (finished === 'work') {
+        const minutes = fullRef.current('work') / 60_000;
+        const at = Date.now();
+        apply((d) => recordPomodoro(d, minutes, at));
+      }
       const next = otherTimer(finished);
       const title = finished === 'work' ? 'Работа окончена' : 'Отдых окончен';
       const nextMinutes = Math.round(fullRef.current(next) / 60_000);
@@ -55,7 +62,7 @@ export function PomodoroProvider({ children }: { children: ReactNode }) {
       if (away) setAlert(title);
       if (!away || !platform.notify(title, body)) toast(`${title}. ${body}`);
     },
-    [platform, toast],
+    [platform, toast, apply],
   );
 
   // The blinking title stops when the user comes back to the window.

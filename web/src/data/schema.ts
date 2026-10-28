@@ -7,10 +7,12 @@ import { SchemaTooNewError } from './errors.ts';
  * 2 — phase 1.1: knowledge space — `folders`, and `folderId` / `taskIds` in notes.
  *     Existing notes go to the root folder without links (filled in by normalization).
  * 3 — phase 1.5: flashcards — `decks`, `cards`, `reviews`, and `settings.newCardsPerDay`.
+ * 4 — phase 2.1: `settings.workspaces`, daily `activity` counters, `doneAt` in tasks.
+ *     Done tasks get `doneAt: null` (the time is unknown); counting starts with this version.
  *
  * To change the format: bump this number and add a migration from the previous version.
  */
-export const CURRENT_SCHEMA_VERSION = 3;
+export const CURRENT_SCHEMA_VERSION = 4;
 
 type Data = Record<string, unknown>;
 
@@ -28,6 +30,8 @@ const MIGRATIONS: Record<number, (data: Data) => Data> = {
   },
   // Nothing to convert: the new lists start empty, the new setting gets its default.
   2: (data) => ({ ...data, schemaVersion: 3, decks: [], cards: [], reviews: [] }),
+  // Workspaces get the default set in normalization; doneAt of old tasks stays unknown.
+  3: (data) => ({ ...data, schemaVersion: 4, activity: {} }),
 };
 
 export function schemaVersionOf(data: Data): number {

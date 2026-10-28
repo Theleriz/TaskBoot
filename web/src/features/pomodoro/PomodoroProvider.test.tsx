@@ -44,11 +44,12 @@ describe('PomodoroProvider', () => {
     vi.useFakeTimers();
     const data = createEmptyData();
     data.settings.workMinutes = 1;
+    const store = createMemoryStore(data);
 
     render(
       <PlatformContext.Provider value={platform}>
         <ToastProvider>
-          <AppDataProvider store={createMemoryStore(data)}>
+          <AppDataProvider store={store}>
             <PomodoroProvider>
               <Probe onApi={capture} />
             </PomodoroProvider>
@@ -72,5 +73,12 @@ describe('PomodoroProvider', () => {
     });
     expect(api?.timers.rest.state).toBe('running');
     expect(api?.lastActive).toBe('rest');
+
+    // The finished work session went to the statistics (phase 2).
+    await act(async () => {
+      vi.advanceTimersByTime(1000);
+    });
+    const days = Object.values(store.snapshot()?.activity ?? {});
+    expect(days).toEqual([expect.objectContaining({ pomodoroSessions: 1, pomodoroMinutes: 1 })]);
   });
 });

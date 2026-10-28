@@ -9,6 +9,7 @@ import {
   type Flashcard,
   type Folder,
   type LinkItem,
+  type DayActivity,
   type Note,
   type ReviewEntry,
   type SavedTheme,
@@ -17,6 +18,11 @@ import {
   type Settings,
   type Task,
   type ThemeSettings,
+  type Workspace,
+  type WorkspaceTab,
+  DAY_ACTIVITY_FIELDS,
+  DEFAULT_WORKSPACE,
+  WORKSPACE_TABS,
   BASIC_SLOT,
   CARD_KINDS,
   CARD_STATES,
@@ -86,12 +92,18 @@ export function normalizeTask(v: unknown, now = Date.now()): Task | null {
   if (!isRecord(v)) return null;
   const title = str(v.title).trim();
   if (!title) return null;
+  const status = oneOf(STATUSES, v.status, 'todo');
   return {
     id: str(v.id),
     title,
     quadrant: oneOf(QUADRANTS, v.quadrant, 'q2'),
-    status: oneOf(STATUSES, v.status, 'todo'),
+    status,
     createdAt: time(v.createdAt, now),
+    // Only a done task has a completion time.
+    doneAt:
+      status === 'done' && typeof v.doneAt === 'number' && Number.isFinite(v.doneAt)
+        ? v.doneAt
+        : null,
     description: str(v.description),
     checklist: normalizeChecklist(v.checklist),
     links: normalizeLinks(v.links),
@@ -197,6 +209,39 @@ function normalizeSavedThemes(v: unknown): SavedTheme[] {
   return uniqueIds(themes);
 }
 
+/** Unknown tabs and repeated ones are dropped; a workspace without tabs is dropped too. */
+function normalizeWorkspaces(v: unknown): Workspace[] {
+  const workspaces: Workspace[] = [];
+  for (const w of list(v).filter(isRecord)) {
+    const name = str(w.name).trim();
+    const tabs = [
+      ...new Set(
+        list(w.tabs).filter((t): t is WorkspaceTab => WORKSPACE_TABS.includes(t as WorkspaceTab)),
+      ),
+    ];
+    if (name && tabs.length > 0) workspaces.push({ id: str(w.id), name, tabs });
+  }
+  return workspaces.length > 0
+    ? uniqueIds(workspaces)
+    : [{ ...DEFAULT_WORKSPACE, tabs: [...DEFAULT_WORKSPACE.tabs] }];
+}
+
+const DAY_KEY = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Counters are whole numbers ≥ 0; empty days and malformed keys are dropped. */
+function normalizeActivity(v: unknown): Record<string, DayActivity> {
+  const out: Record<string, DayActivity> = {};
+  if (!isRecord(v)) return out;
+  for (const [key, value] of Object.entries(v)) {
+    if (!DAY_KEY.test(key) || !isRecord(value)) continue;
+    const day = Object.fromEntries(
+      DAY_ACTIVITY_FIELDS.map((f) => [f, Math.max(0, Math.round(num(value[f])))]),
+    ) as unknown as DayActivity;
+    if (DAY_ACTIVITY_FIELDS.some((f) => day[f] > 0)) out[key] = day;
+  }
+  return out;
+}
+
 export function normalizeSettings(v: unknown): Settings {
   const s = isRecord(v) ? v : {};
   const settings: Settings = {
@@ -205,6 +250,7 @@ export function normalizeSettings(v: unknown): Settings {
     newCardsPerDay: count(s.newCardsPerDay, NEW_CARDS_LIMITS),
     theme: normalizeTheme(s.theme),
     themes: normalizeSavedThemes(s.themes),
+    workspaces: normalizeWorkspaces(s.workspaces),
   };
   // A saved theme that no longer exists falls back to the system theme.
   if (
@@ -380,6 +426,7 @@ export function normalizeAppData(v: unknown, now = Date.now()): AppData {
         .filter(keep),
     ),
     ...normalizeFlashcards(d, now, new Set(notes.map((n) => n.id))),
+    activity: normalizeActivity(d.activity),
     settings: normalizeSettings(d.settings),
   };
 }

@@ -2,6 +2,7 @@
 // clone, so callers never touch the stored state. Ids and timestamps come from the caller:
 // React may run an update twice, and both runs must produce the same result.
 
+import { countActivity, dayKey } from '../data/activity.ts';
 import { cardSlots } from '../data/normalize.ts';
 import { newSchedule, review } from '../data/scheduler.ts';
 import {
@@ -15,6 +16,8 @@ import {
   DURATION_LIMITS,
   NEW_CARDS_LIMITS,
   REVIEW_LOG_LIMIT,
+  WORKSPACE_TABS,
+  type WorkspaceTab,
 } from '../data/model.ts';
 import { normalizeUrl } from '../data/url.ts';
 
@@ -38,10 +41,12 @@ export function addTask(d: AppData, title: string, id: string, now: number): boo
     quadrant: 'q2',
     status: 'todo',
     createdAt: now,
+    doneAt: null,
     description: '',
     checklist: [],
     links: [],
   });
+  countActivity(d, now, 'tasksCreated');
   return true;
 }
 
@@ -53,10 +58,29 @@ export function renameTask(d: AppData, id: string, title: string): boolean {
   return true;
 }
 
-/** F-05 / F-06: moving on one board changes only that board's axis. */
-export function moveTask(d: AppData, id: string, to: { quadrant: Quadrant } | { status: Status }) {
+/**
+ * F-05 / F-06: moving on one board changes only that board's axis.
+ * Reaching "done" records the time and counts the task for that day; leaving "done" takes
+ * the count back from the day it was made, so dragging back and forth does not inflate it.
+ */
+export function moveTask(
+  d: AppData,
+  id: string,
+  to: { quadrant: Quadrant } | { status: Status },
+  now: number,
+) {
   const task = findTask(d, id);
-  if (task) Object.assign(task, to);
+  if (!task) return;
+  if ('status' in to && to.status !== task.status) {
+    if (to.status === 'done') {
+      task.doneAt = now;
+      countActivity(d, now, 'tasksDone');
+    } else if (task.status === 'done') {
+      if (task.doneAt !== null) countActivity(d, task.doneAt, 'tasksDone', -1);
+      task.doneAt = null;
+    }
+  }
+  Object.assign(task, to);
 }
 
 export function setDescription(d: AppData, id: string, description: string) {
@@ -156,29 +180,20 @@ export function addNote(
     createdAt: now,
     updatedAt: now,
   });
+  countActivity(d, now, 'notesEdited');
   return true;
 }
 
-export function updateNote(
-  d: AppData,
-  id: string,
-  title: string,
-  text: string,
-  now: number,
-): boolean {
-  const note = d.notes.find((n) => n.id === id);
-  const clean = title.trim();
-  if (!note || !clean) return false;
-  note.title = clean;
-  note.text = text;
-  note.updatedAt = now;
-  return true;
+/** Each note counts once per day, however many keystrokes. Call before updating `updatedAt`. */
+function countNoteEdit(d: AppData, note: { updatedAt: number }, now: number) {
+  if (dayKey(note.updatedAt) !== dayKey(now)) countActivity(d, now, 'notesEdited');
 }
 
 /** Edits from the knowledge-space editor; an unchanged text keeps updatedAt. */
 export function setNoteText(d: AppData, id: string, text: string, now: number) {
   const note = d.notes.find((n) => n.id === id);
   if (!note || note.text === text) return;
+  countNoteEdit(d, note, now);
   note.text = text;
   note.updatedAt = now;
 }
@@ -188,6 +203,7 @@ export function renameNote(d: AppData, id: string, title: string, now: number): 
   const clean = title.trim();
   if (!note || !clean) return false;
   if (note.title !== clean) {
+    countNoteEdit(d, note, now);
     note.title = clean;
     note.updatedAt = now;
   }
@@ -486,4 +502,53 @@ export function setNewCardsPerDay(d: AppData, value: number) {
     NEW_CARDS_LIMITS.max,
     Math.max(NEW_CARDS_LIMITS.min, Math.round(value)),
   );
+}
+
+/* ---------- Activity (phase 2) ---------- */
+
+/** A finished work session of the Pomodoro timer. Rest and stopped sessions do not count. */
+export function recordPomodoro(d: AppData, minutes: number, now: number) {
+  countActivity(d, now, 'pomodoroSessions');
+  countActivity(d, now, 'pomodoroMinutes', Math.max(0, Math.round(minutes)));
+}
+
+/* ---------- Workspaces (phase 2.2) ---------- */
+
+export interface WorkspaceInput {
+  name: string;
+  tabs: readonly WorkspaceTab[];
+}
+
+/** Known tabs only, each once, in the given order. */
+const cleanTabs = (tabs: readonly WorkspaceTab[]) => [
+  ...new Set(tabs.filter((t) => WORKSPACE_TABS.includes(t))),
+];
+
+/** Why a workspace cannot be saved, or null when it can. */
+export function workspaceProblem(input: WorkspaceInput): string | null {
+  if (!input.name.trim()) return 'Введите название рабочего пространства';
+  if (cleanTabs(input.tabs).length === 0) return 'Выберите хотя бы одну вкладку';
+  return null;
+}
+
+export function addWorkspace(d: AppData, input: WorkspaceInput, id: string): boolean {
+  if (workspaceProblem(input)) return false;
+  d.settings.workspaces.push({ id, name: input.name.trim(), tabs: cleanTabs(input.tabs) });
+  return true;
+}
+
+export function updateWorkspace(d: AppData, id: string, input: WorkspaceInput): boolean {
+  const ws = d.settings.workspaces.find((w) => w.id === id);
+  if (!ws || workspaceProblem(input)) return false;
+  ws.name = input.name.trim();
+  ws.tabs = cleanTabs(input.tabs);
+  return true;
+}
+
+/** The last workspace stays: there is always at least one. */
+export function deleteWorkspace(d: AppData, id: string): boolean {
+  if (d.settings.workspaces.length <= 1) return false;
+  const before = d.settings.workspaces.length;
+  d.settings.workspaces = d.settings.workspaces.filter((w) => w.id !== id);
+  return d.settings.workspaces.length < before;
 }

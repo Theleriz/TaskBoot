@@ -34,6 +34,7 @@ npm ci
 | `src/features/details/`   | Task details panel: title, position, description, checklist, links, linked notes                                                                                              |
 | `src/features/pomodoro/`  | Timers, ticker (Web Worker), sounds, header widget, window title                                                                                                              |
 | `src/features/workspace/` | The workspace tab: knowledge-space layout and secrets                                                                                                                         |
+| `src/features/layout/`    | Workspaces: the switcher in the header and the dialog to choose and order tabs (registry: `src/tabs.ts`)                                                                      |
 | `src/features/cards/`     | Flashcards: decks, card forms, study queue and session (FSRS via ts-fsrs), cards from notes                                                                                   |
 | `src/features/knowledge/` | Folder tree, Markdown editor (CodeMirror), preview (markdown-it + KaTeX), search (MiniSearch; RegEx in a Web Worker with a 1 s limit); editor, preview and search load lazily |
 | `src/features/settings/`  | Themes (modes, custom colors, random, saved) and data export / import                                                                                                         |

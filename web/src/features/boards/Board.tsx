@@ -55,11 +55,14 @@ export function Board({
     const id = dragId.current;
     endDrag(e);
     if (!id) return;
+    // Wall-clock time of the drop, taken from the event (Date.now() is not allowed in render scope).
+    const now = Math.round(performance.timeOrigin + e.timeStamp);
     apply((d) =>
       moveTask(
         d,
         id,
         matrix ? { quadrant: zoneKey as Task['quadrant'] } : { status: zoneKey as Task['status'] },
+        now,
       ),
     );
   };
