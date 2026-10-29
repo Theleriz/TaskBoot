@@ -35,7 +35,10 @@ export function AppDataProvider({ store, children }: { store: DataStore; childre
   const [load, setLoad] = useState<LoadState>({ kind: 'loading' });
   const [saveError, setSaveError] = useState<string | null>(null);
   const platform = usePlatform();
-  const dirty = useRef(false);
+  // The data object that is in the store (null: what is shown must still be saved). Not a "dirty"
+  // flag: apply() runs before React commits its change, so a save timer firing in between would
+  // clear the flag for an edit it does not contain, and that edit would never be saved.
+  const saved = useRef<AppData | null>(data);
   const latest = useRef(data);
   const readOnly = load.kind === 'ready' && load.readOnly;
 
@@ -51,7 +54,8 @@ export function AppDataProvider({ store, children }: { store: DataStore; childre
           notice: result.origin === 'legacy' ? 'Данные перенесены из прежней веб-версии.' : null,
         });
         // Save once so migrated or imported data is written in the current format and store.
-        dirty.current = result.origin === 'legacy' || result.origin === 'moved';
+        saved.current =
+          result.origin === 'legacy' || result.origin === 'moved' ? null : result.data;
       },
       (error: unknown) => {
         if (cancelled) return;
@@ -66,9 +70,9 @@ export function AppDataProvider({ store, children }: { store: DataStore; childre
   // Debounced save after every change.
   useEffect(() => {
     latest.current = data;
-    if (!dirty.current || readOnly || load.kind !== 'ready') return;
+    if (data === saved.current || readOnly || load.kind !== 'ready') return;
     const timer = setTimeout(() => {
-      dirty.current = false;
+      saved.current = data;
       store.save(data).then(
         () => setSaveError(null),
         (e: unknown) => setSaveError(e instanceof Error ? e.message : String(e)),
@@ -80,9 +84,10 @@ export function AppDataProvider({ store, children }: { store: DataStore; childre
   // Do not lose the last edit when the page or the shell window closes during the save delay.
   useEffect(() => {
     const flush = async () => {
-      if (!dirty.current || readOnly) return;
-      dirty.current = false;
-      await store.save(latest.current);
+      const next = latest.current;
+      if (next === saved.current || readOnly) return;
+      saved.current = next;
+      await store.save(next);
     };
     const onPageHide = () => void flush().catch(() => {});
     // IndexedDB writes are asynchronous, so start them when the page is hidden: that comes before
@@ -101,7 +106,6 @@ export function AppDataProvider({ store, children }: { store: DataStore; childre
   }, [store, readOnly, platform]);
 
   const apply = useCallback((recipe: (draft: AppData) => void) => {
-    dirty.current = true;
     setData((prev) => {
       const next = structuredClone(prev);
       recipe(next);
@@ -109,10 +113,7 @@ export function AppDataProvider({ store, children }: { store: DataStore; childre
     });
   }, []);
 
-  const replace = useCallback((next: AppData) => {
-    dirty.current = true;
-    setData(next);
-  }, []);
+  const replace = useCallback((next: AppData) => setData(next), []);
 
   const api = useMemo<AppDataApi>(
     () => ({ data, load, saveError, apply, replace }),
