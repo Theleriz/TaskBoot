@@ -20,7 +20,7 @@ describe('schema 5', () => {
     const data = importData(JSON.stringify(v4));
     expect(data.tasks[0]).toMatchObject({ backlog: false, goalId: null });
     expect(data.settings.workspaces.map((w) => w.tabs)).toEqual([
-      ['matrix', 'kanban', 'backlog', 'pomodoro', 'space'],
+      ['matrix', 'kanban', 'backlog', 'pomodoro', 'space', 'stats'],
       ['cards'],
     ]);
   });
@@ -33,8 +33,8 @@ describe('schema 5', () => {
           settings: { workspaces: [{ id: 'main', name: 'Основное', tabs }] },
         }),
       ).settings.workspaces[0]?.tabs;
-    expect(tabsOf(['cards', 'matrix'])).toEqual(['cards', 'matrix', 'backlog']);
-    expect(tabsOf(['backlog', 'matrix'])).toEqual(['backlog', 'matrix']);
+    expect(tabsOf(['cards', 'matrix'])).toEqual(['cards', 'matrix', 'backlog', 'stats']);
+    expect(tabsOf(['backlog', 'matrix'])).toEqual(['backlog', 'matrix', 'stats']);
   });
 
   it('gives version 3 data the full default workspace', () => {

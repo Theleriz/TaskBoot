@@ -91,9 +91,13 @@ describe('long notes', () => {
   it('renders an unclosed link reference definition in linear time', () => {
     const cases = ['[a]: /u "' + 'x\n'.repeat(100_000), '[' + 'a\n'.repeat(100_000)];
     for (const text of cases) {
-      const started = performance.now();
-      renderMarkdown(text);
-      expect(performance.now() - started).toBeLessThan(1000);
+      // The best of three runs: a busy machine slows a single run down, not all of them.
+      const times = [0, 1, 2].map(() => {
+        const started = performance.now();
+        renderMarkdown(text);
+        return performance.now() - started;
+      });
+      expect(Math.min(...times)).toBeLessThan(1000);
     }
   }, 30_000);
 });

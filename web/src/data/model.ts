@@ -153,6 +153,7 @@ export const WORKSPACE_TABS = [
   'pomodoro',
   'space',
   'cards',
+  'stats',
 ] as const;
 export type WorkspaceTab = (typeof WORKSPACE_TABS)[number];
 

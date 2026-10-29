@@ -40,6 +40,9 @@ function remember(prefs: Storage | null, key: string, value: string) {
 const CardsView = lazy(() =>
   import('./features/cards/CardsView.tsx').then((m) => ({ default: m.CardsView })),
 );
+const StatsView = lazy(() =>
+  import('./features/stats/StatsView.tsx').then((m) => ({ default: m.StatsView })),
+);
 
 type Editing = { kind: 'edit'; workspace: Workspace } | { kind: 'new' } | null;
 
@@ -194,6 +197,13 @@ function Shell({ prefs }: { prefs: Storage | null }) {
           <section className="view scroll" role="tabpanel" aria-label="Карточки">
             <Suspense fallback={null}>
               <CardsView onOpenNote={openNote} />
+            </Suspense>
+          </section>
+        )}
+        {view === 'stats' && (
+          <section className="view scroll" role="tabpanel" aria-label="Статистика">
+            <Suspense fallback={null}>
+              <StatsView />
             </Suspense>
           </section>
         )}
