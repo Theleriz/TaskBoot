@@ -51,6 +51,8 @@ describe('normalizeTask', () => {
       status: 'done',
       createdAt: 5,
       doneAt: null,
+      backlog: false,
+      goalId: null,
       description: '',
       checklist: [],
       links: [],

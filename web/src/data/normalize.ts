@@ -8,6 +8,7 @@ import {
   type Deck,
   type Flashcard,
   type Folder,
+  type Goal,
   type LinkItem,
   type DayActivity,
   type Note,
@@ -88,7 +89,11 @@ function normalizeLinks(v: unknown): LinkItem[] {
   return uniqueIds(links);
 }
 
-export function normalizeTask(v: unknown, now = Date.now()): Task | null {
+export function normalizeTask(
+  v: unknown,
+  now = Date.now(),
+  goalIds: ReadonlySet<string> = new Set(),
+): Task | null {
   if (!isRecord(v)) return null;
   const title = str(v.title).trim();
   if (!title) return null;
@@ -104,9 +109,28 @@ export function normalizeTask(v: unknown, now = Date.now()): Task | null {
       status === 'done' && typeof v.doneAt === 'number' && Number.isFinite(v.doneAt)
         ? v.doneAt
         : null,
+    // A task in progress or done is on the boards, whatever the flag says.
+    backlog: v.backlog === true && status === 'todo',
+    goalId: typeof v.goalId === 'string' && goalIds.has(v.goalId) ? v.goalId : null,
     description: str(v.description),
     checklist: normalizeChecklist(v.checklist),
     links: normalizeLinks(v.links),
+  };
+}
+
+const DAY_KEY = /^\d{4}-\d{2}-\d{2}$/;
+
+function normalizeGoal(v: unknown, now: number): Goal | null {
+  if (!isRecord(v)) return null;
+  const title = str(v.title).trim();
+  if (!title) return null;
+  const deadline = str(v.deadline);
+  return {
+    id: str(v.id),
+    title,
+    description: str(v.description),
+    deadline: DAY_KEY.test(deadline) ? deadline : null,
+    createdAt: time(v.createdAt, now),
   };
 }
 
@@ -225,8 +249,6 @@ function normalizeWorkspaces(v: unknown): Workspace[] {
     ? uniqueIds(workspaces)
     : [{ ...DEFAULT_WORKSPACE, tabs: [...DEFAULT_WORKSPACE.tabs] }];
 }
-
-const DAY_KEY = /^\d{4}-\d{2}-\d{2}$/;
 
 /** Counters are whole numbers ≥ 0; empty days and malformed keys are dropped. */
 function normalizeActivity(v: unknown): Record<string, DayActivity> {
@@ -395,9 +417,15 @@ function normalizeFlashcards(
 export function normalizeAppData(v: unknown, now = Date.now()): AppData {
   const d = isRecord(v) ? v : {};
   const keep = <T>(x: T | null): x is T => x !== null;
+  const goals = uniqueIds(
+    list(d.goals)
+      .map((g) => normalizeGoal(g, now))
+      .filter(keep),
+  );
+  const goalIds = new Set(goals.map((g) => g.id));
   const tasks = uniqueIds(
     list(d.tasks)
-      .map((t) => normalizeTask(t, now))
+      .map((t) => normalizeTask(t, now, goalIds))
       .filter(keep),
   );
   // Duplicate folder ids get new values before the tree is checked, so parent links stay unambiguous.
@@ -418,6 +446,7 @@ export function normalizeAppData(v: unknown, now = Date.now()): AppData {
   return {
     schemaVersion: CURRENT_SCHEMA_VERSION,
     tasks,
+    goals,
     folders,
     notes,
     secrets: uniqueIds(

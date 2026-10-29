@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { createEmptyData } from '../data/normalize.ts';
 import {
+  addGoal,
+  deleteGoal,
+  goalProblem,
+  goalProgress,
+  sendToBacklog,
+  setTaskGoal,
+  takeForToday,
+  updateGoal,
   addWorkspace,
   deleteWorkspace,
   updateWorkspace,
@@ -60,6 +68,8 @@ describe('ops', () => {
         status: 'todo',
         createdAt: 5,
         doneAt: null,
+        backlog: false,
+        goalId: null,
         description: '',
         checklist: [],
         links: [],
@@ -378,5 +388,60 @@ describe('workspaces', () => {
     expect(deleteWorkspace(d, 'main')).toBe(true);
     expect(deleteWorkspace(d, 'a')).toBe(false);
     expect(d.settings.workspaces.map((w) => w.id)).toEqual(['a']);
+  });
+});
+
+describe('backlog and goals (phase 2.3)', () => {
+  const goal = { title: 'Диплом', description: '', deadline: '2027-06-01' };
+
+  it('keeps backlog tasks as "todo" and takes them for today', () => {
+    const d = createEmptyData();
+    addTask(d, 'Later', 'b', 1, { backlog: true });
+    expect(d.tasks[0]).toMatchObject({ backlog: true, status: 'todo', quadrant: 'q2' });
+    takeForToday(d, 'b');
+    expect(d.tasks[0]).toMatchObject({ backlog: false, status: 'todo', quadrant: 'q2' });
+  });
+
+  it('puts off a task in progress but not a done one', () => {
+    const d = withTask();
+    moveTask(d, 't1', { status: 'doing' }, 2);
+    expect(sendToBacklog(d, 't1')).toBe(true);
+    expect(d.tasks[0]).toMatchObject({ backlog: true, status: 'todo' });
+    moveTask(d, 't1', { status: 'done' }, 3);
+    expect(d.tasks[0]).toMatchObject({ backlog: false, status: 'done' });
+    expect(sendToBacklog(d, 't1')).toBe(false);
+  });
+
+  it('validates, edits and deletes goals; tasks stay', () => {
+    const d = createEmptyData();
+    expect(goalProblem({ ...goal, title: ' ' })).toMatch(/название/);
+    expect(goalProblem({ ...goal, deadline: '1 июня' })).toMatch(/дата/);
+    expect(addGoal(d, { ...goal, title: ' Диплом ' }, 'g', 5)).toBe(true);
+    expect(d.goals).toEqual([
+      { id: 'g', title: 'Диплом', description: '', deadline: '2027-06-01', createdAt: 5 },
+    ]);
+    expect(updateGoal(d, 'g', { title: 'ВКР', description: 'текст', deadline: null })).toBe(true);
+    expect(d.goals[0]).toMatchObject({ title: 'ВКР', description: 'текст', deadline: null });
+
+    addTask(d, 'Глава 1', 'a', 6, { goalId: 'g' });
+    addTask(d, 'Глава 2', 'b', 6, { backlog: true, goalId: 'missing' });
+    expect(d.tasks.map((t) => t.goalId)).toEqual(['g', null]);
+    deleteGoal(d, 'g');
+    expect(d.goals).toEqual([]);
+    expect(d.tasks.map((t) => t.goalId)).toEqual([null, null]);
+  });
+
+  it('counts goal progress over done tasks, backlog included', () => {
+    const d = createEmptyData();
+    addGoal(d, goal, 'g', 1);
+    addTask(d, 'A', 'a', 1);
+    addTask(d, 'B', 'b', 1, { backlog: true, goalId: 'g' });
+    addTask(d, 'C', 'c', 1);
+    setTaskGoal(d, 'a', 'g');
+    setTaskGoal(d, 'c', 'nope');
+    moveTask(d, 'a', { status: 'done' }, 2);
+    expect(goalProgress(d, 'g')).toEqual({ done: 1, total: 2 });
+    setTaskGoal(d, 'a', null);
+    expect(goalProgress(d, 'g')).toEqual({ done: 0, total: 1 });
   });
 });

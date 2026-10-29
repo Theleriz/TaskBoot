@@ -1,6 +1,7 @@
 import { Suspense, lazy, useEffect, useState } from 'react';
 import { DEFAULT_WORKSPACE, type Workspace } from './data/model.ts';
 import { newId } from './data/ids.ts';
+import { BacklogView } from './features/backlog/BacklogView.tsx';
 import { Board } from './features/boards/Board.tsx';
 import { DetailsPanel } from './features/details/DetailsPanel.tsx';
 import { WorkspaceDialog } from './features/layout/WorkspaceDialog.tsx';
@@ -166,6 +167,11 @@ function Shell({ prefs }: { prefs: Storage | null }) {
         {view === 'kanban' && (
           <section className="view" role="tabpanel" aria-label="Канбан">
             <Board kind="kanban" onOpen={setDetailsId} />
+          </section>
+        )}
+        {view === 'backlog' && (
+          <section className="view scroll" role="tabpanel" aria-label="Бэклог">
+            <BacklogView onOpen={setDetailsId} />
           </section>
         )}
         {view === 'pomodoro' && (

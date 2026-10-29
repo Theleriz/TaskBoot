@@ -30,6 +30,7 @@ export function Board({
 
   const zoneOf = (t: Task) => (matrix ? t.quadrant : t.status);
   const otherOf = (t: Task) => others.find((z) => z.key === (matrix ? t.status : t.quadrant));
+  const goalTitles = new Map(data.goals.map((g) => [g.id, g.title]));
   const noteCounts = new Map<string, number>();
   for (const n of data.notes) {
     for (const id of n.taskIds) noteCounts.set(id, (noteCounts.get(id) ?? 0) + 1);
@@ -71,7 +72,7 @@ export function Board({
     <div className={`board ${kind}`}>
       {zones.map((zone) => {
         const tasks = data.tasks
-          .filter((t) => zoneOf(t) === zone.key)
+          .filter((t) => !t.backlog && zoneOf(t) === zone.key)
           .sort((a, b) => a.createdAt - b.createdAt);
         return (
           <section
@@ -99,6 +100,7 @@ export function Board({
                   key={task.id}
                   task={task}
                   notes={noteCounts.get(task.id)}
+                  goal={task.goalId ? goalTitles.get(task.goalId) : undefined}
                   other={otherOf(task)}
                   dragging={draggingId === task.id}
                   onOpen={(eventTime) => {

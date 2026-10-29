@@ -31,10 +31,20 @@ export const hasDetails = (t: Task) =>
 
 /* ---------- Tasks ---------- */
 
-/** F-01 / F-02 / F-08: a new task goes to q2 / todo; blank titles are rejected. */
-export function addTask(d: AppData, title: string, id: string, now: number): boolean {
+/**
+ * F-01 / F-02 / F-08: a new task goes to q2 / todo; blank titles are rejected.
+ * A backlog task (phase 2.3) waits off the boards; it may start with a goal.
+ */
+export function addTask(
+  d: AppData,
+  title: string,
+  id: string,
+  now: number,
+  options: { backlog?: boolean; goalId?: string | null } = {},
+): boolean {
   const clean = title.trim();
   if (!clean) return false;
+  const goalId = options.goalId && findGoal(d, options.goalId) ? options.goalId : null;
   d.tasks.push({
     id,
     title: clean,
@@ -42,6 +52,8 @@ export function addTask(d: AppData, title: string, id: string, now: number): boo
     status: 'todo',
     createdAt: now,
     doneAt: null,
+    backlog: options.backlog === true,
+    goalId,
     description: '',
     checklist: [],
     links: [],
@@ -79,8 +91,83 @@ export function moveTask(
       if (task.doneAt !== null) countActivity(d, task.doneAt, 'tasksDone', -1);
       task.doneAt = null;
     }
+    // A backlog task is always "todo": starting it brings it to the boards.
+    if (to.status !== 'todo') task.backlog = false;
   }
   Object.assign(task, to);
+}
+
+/* ---------- Backlog and goals (phase 2.3) ---------- */
+
+/** Puts a task off for later. A done task stays where it is: there is nothing left to do. */
+export function sendToBacklog(d: AppData, id: string): boolean {
+  const task = findTask(d, id);
+  if (!task || task.status === 'done') return false;
+  task.status = 'todo';
+  task.backlog = true;
+  return true;
+}
+
+/** «Взять на сегодня»: back to the boards as "todo", in the quadrant the task has (q2 by default). */
+export function takeForToday(d: AppData, id: string) {
+  const task = findTask(d, id);
+  if (task) task.backlog = false;
+}
+
+export const findGoal = (d: AppData, id: string) => d.goals.find((g) => g.id === id);
+
+export function setTaskGoal(d: AppData, taskId: string, goalId: string | null) {
+  const task = findTask(d, taskId);
+  if (task) task.goalId = goalId !== null && findGoal(d, goalId) ? goalId : null;
+}
+
+export interface GoalInput {
+  title: string;
+  description: string;
+  /** "YYYY-MM-DD" or null. */
+  deadline: string | null;
+}
+
+const DAY = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Why a goal cannot be saved, or null when it can. */
+export function goalProblem(input: GoalInput): string | null {
+  if (!input.title.trim()) return 'Введите название цели';
+  if (input.deadline !== null && !DAY.test(input.deadline)) return 'Неверная дата срока';
+  return null;
+}
+
+export function addGoal(d: AppData, input: GoalInput, id: string, now: number): boolean {
+  if (goalProblem(input)) return false;
+  d.goals.push({
+    id,
+    title: input.title.trim(),
+    description: input.description,
+    deadline: input.deadline,
+    createdAt: now,
+  });
+  return true;
+}
+
+export function updateGoal(d: AppData, id: string, input: GoalInput): boolean {
+  const goal = findGoal(d, id);
+  if (!goal || goalProblem(input)) return false;
+  goal.title = input.title.trim();
+  goal.description = input.description;
+  goal.deadline = input.deadline;
+  return true;
+}
+
+/** Tasks stay; only their link to the goal goes away. */
+export function deleteGoal(d: AppData, id: string) {
+  d.goals = d.goals.filter((g) => g.id !== id);
+  for (const task of d.tasks) if (task.goalId === id) task.goalId = null;
+}
+
+/** Progress of a goal: its done tasks out of all its tasks, backlog included. */
+export function goalProgress(d: AppData, id: string): { done: number; total: number } {
+  const tasks = d.tasks.filter((t) => t.goalId === id);
+  return { done: tasks.filter((t) => t.status === 'done').length, total: tasks.length };
 }
 
 export function setDescription(d: AppData, id: string, description: string) {
