@@ -30,6 +30,9 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
+    // UI tests load lazy parts (the editor, the flashcards tab) on first use; on a busy machine
+    // that takes longer than the 5 s default.
+    testTimeout: 20_000,
     include: ['src/**/*.test.{ts,tsx}'],
     css: true,
   },

@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom/vitest';
-import { cleanup } from '@testing-library/react';
+import { cleanup, configure } from '@testing-library/react';
 import { afterEach } from 'vitest';
 
 // jsdom has no layout. CodeMirror measures text ranges; empty rectangles are enough for tests.
@@ -10,6 +10,9 @@ if (typeof Range !== 'undefined' && !('getClientRects' in Range.prototype)) {
     getBoundingClientRect: empty,
   });
 }
+
+// findBy… and waitFor wait for lazy parts of the app; 1 s is too little under a full parallel run.
+configure({ asyncUtilTimeout: 5000 });
 
 afterEach(() => {
   cleanup();
