@@ -73,8 +73,7 @@ describe('flashcards tab', () => {
 
     await waitFor(() => expect(saved().reviews.map((r) => r.rating)).toEqual([3, 4]));
     expect(saved().cards.every((c) => Object.values(c.schedules)[0]?.reps === 1)).toBe(true);
-    // A long scenario: under a full parallel run it can take more than the default 5 s.
-  }, 15_000);
+  });
 
   it('ends a session when nothing is due and keeps the daily limit', async () => {
     const user = userEvent.setup();
