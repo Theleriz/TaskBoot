@@ -1,6 +1,12 @@
 # Task Tracker
 
-Personal productivity app: Eisenhower matrix, Kanban board, Pomodoro timer and a workspace for notes, with one shared set of tasks. The interface is in Russian.
+Personal productivity app with one shared set of tasks and notes. The interface is in Russian.
+
+- **Tasks:** Eisenhower matrix, Kanban board, a backlog for later and long-term goals with progress.
+- **Focus:** Pomodoro timer.
+- **Knowledge:** notes in folders (Markdown with KaTeX formulas, full-text and RegEx search) and Anki-style flashcards with FSRS spaced repetition.
+- **Overview:** activity statistics — a year heatmap, the last week, streaks.
+- **Workspaces:** your own sets of tabs, such as «Учёба» or «Работа».
 
 **Open the web app:** https://theleriz.github.io/TaskBoot/ · **Download for Windows:** [latest release](https://github.com/Theleriz/TaskBoot/releases/latest)
 
