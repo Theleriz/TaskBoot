@@ -36,6 +36,7 @@ describe('workspaces', () => {
       'Pomodoro',
       'Пространство',
       'Карточки',
+      'Статистика',
     ]);
   });
 
@@ -52,6 +53,7 @@ describe('workspaces', () => {
     await user.click(within(dialog).getByRole('checkbox', { name: 'Эйзенхауэр' }));
     await user.click(within(dialog).getByRole('checkbox', { name: 'Бэклог' }));
     await user.click(within(dialog).getByRole('checkbox', { name: 'Pomodoro' }));
+    await user.click(within(dialog).getByRole('checkbox', { name: 'Статистика' }));
     for (let i = 0; i < 4; i++) {
       await user.click(within(dialog).getByRole('button', { name: 'Выше: Карточки' }));
     }
@@ -63,7 +65,7 @@ describe('workspaces', () => {
     expect(screen.getByRole('tab', { name: 'Карточки' })).toHaveAttribute('aria-selected', 'true');
     await waitFor(() =>
       expect(saved().settings.workspaces.map((w) => [w.name, w.tabs])).toEqual([
-        ['Основное', ['matrix', 'kanban', 'backlog', 'pomodoro', 'space', 'cards']],
+        ['Основное', ['matrix', 'kanban', 'backlog', 'pomodoro', 'space', 'cards', 'stats']],
         ['Учёба', ['cards', 'kanban', 'space']],
       ]),
     );
@@ -75,7 +77,15 @@ describe('workspaces', () => {
     await user.click(await screen.findByRole('button', { name: 'Основное' }));
     await user.click(screen.getByRole('button', { name: 'Настроить «Основное»…' }));
     const dialog = screen.getByRole('dialog');
-    for (const tab of ['Эйзенхауэр', 'Канбан', 'Бэклог', 'Pomodoro', 'Пространство', 'Карточки']) {
+    for (const tab of [
+      'Эйзенхауэр',
+      'Канбан',
+      'Бэклог',
+      'Pomodoro',
+      'Пространство',
+      'Карточки',
+      'Статистика',
+    ]) {
       await user.click(within(dialog).getByRole('checkbox', { name: tab }));
     }
     await user.click(within(dialog).getByRole('button', { name: 'Сохранить' }));
@@ -103,8 +113,8 @@ describe('workspaces', () => {
 
     await user.click(screen.getByRole('button', { name: 'Работа' }));
     await user.click(screen.getByRole('button', { name: 'Основное' }));
-    // Schema 5 adds «Бэклог» to «Основное» after «Канбан».
-    expect(tabNames()).toEqual(['Эйзенхауэр', 'Канбан', 'Бэклог']);
+    // Schemas 5 and 6 add «Бэклог» after «Канбан» and «Статистика» at the end of «Основное».
+    expect(tabNames()).toEqual(['Эйзенхауэр', 'Канбан', 'Бэклог', 'Статистика']);
     expect(screen.getByRole('tab', { name: 'Канбан' })).toHaveAttribute('aria-selected', 'true');
 
     await user.click(screen.getByRole('button', { name: 'Основное' }));

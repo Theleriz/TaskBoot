@@ -12,6 +12,7 @@ export const TAB_TITLES: Record<WorkspaceTab, string> = {
   pomodoro: 'Pomodoro',
   space: 'Пространство',
   cards: 'Карточки',
+  stats: 'Статистика',
 };
 
 /** All tabs in the default order. */

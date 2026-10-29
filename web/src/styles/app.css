@@ -1858,6 +1858,128 @@ button.link-main {
   font-size: 13px;
 }
 
+/* ---------- Статистика (фаза 2.4) ---------- */
+.stats-view {
+  max-width: 900px;
+  margin: 18px auto 16px;
+  display: grid;
+  gap: 16px;
+}
+.stats-view .box-head {
+  flex-wrap: wrap;
+}
+.stat-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+}
+.stat-tile {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  min-width: 0;
+}
+.stat-value {
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.stat-title {
+  margin-top: 4px;
+  font-size: 13px;
+}
+.stat-sub {
+  font-size: 12px;
+  color: var(--muted);
+}
+.stats-metric {
+  width: auto;
+  padding: 4px 8px;
+  font-size: 13px;
+}
+.chart-head {
+  margin: 14px 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.heatmap-scroll {
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+.heatmap,
+.day-bars {
+  display: block;
+}
+.chart-label {
+  font-size: 10px;
+  fill: var(--muted);
+}
+.chart-label.today {
+  fill: var(--text);
+  font-weight: 600;
+}
+.chart-value {
+  font-size: 11px;
+  font-weight: 600;
+  fill: var(--text);
+}
+.chart-axis {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+.hm-cell.hm-l0 {
+  fill: var(--surface-2);
+}
+.hm-cell.hm-l1 {
+  fill: color-mix(in srgb, var(--accent) 30%, var(--surface-2));
+}
+.hm-cell.hm-l2 {
+  fill: color-mix(in srgb, var(--accent) 52%, var(--surface-2));
+}
+.hm-cell.hm-l3 {
+  fill: color-mix(in srgb, var(--accent) 76%, var(--surface-2));
+}
+.hm-cell.hm-l4 {
+  fill: var(--accent);
+}
+.hm-cell.hovered {
+  stroke: var(--text);
+  stroke-width: 1.5;
+}
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 3px;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.heatmap-legend span {
+  margin: 0 3px;
+}
+.bar {
+  fill: var(--accent);
+}
+.bar.hovered {
+  fill: var(--accent-hover);
+}
+.bar-hit {
+  fill: transparent;
+}
+.day-details {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.day-details strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
 /* ---------- Узкий экран (N-07, N-26) ---------- */
 @media (max-width: 720px) {
   .backlog-view {

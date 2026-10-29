@@ -11,10 +11,11 @@ import { SchemaTooNewError } from './errors.ts';
  *     Done tasks get `doneAt: null` (the time is unknown); counting starts with this version.
  * 5 — phase 2.3: `goals`, and `backlog` / `goalId` in tasks. The default workspace
  *     «Основное» gets the new «Бэклог» tab; other workspaces keep their tabs.
+ * 6 — phase 2.4: no new fields; «Основное» gets the new «Статистика» tab at the end.
  *
  * To change the format: bump this number and add a migration from the previous version.
  */
-export const CURRENT_SCHEMA_VERSION = 5;
+export const CURRENT_SCHEMA_VERSION = 6;
 
 type Data = Record<string, unknown>;
 
@@ -46,7 +47,22 @@ const MIGRATIONS: Record<number, (data: Data) => Data> = {
     }
     return next;
   },
+  5: (data) => ({ ...data, schemaVersion: 6, settings: withMainTab(data.settings, 'stats') }),
 };
+
+/** Adds a new tab at the end of «Основное», unless it is there already. */
+function withMainTab(settings: unknown, tab: string): unknown {
+  if (typeof settings !== 'object' || settings === null || Array.isArray(settings)) return settings;
+  const s = settings as Data;
+  if (!Array.isArray(s.workspaces)) return settings;
+  const workspaces = s.workspaces.map((w: unknown) => {
+    if (typeof w !== 'object' || w === null) return w;
+    const ws = w as Data;
+    if (ws.id !== 'main' || !Array.isArray(ws.tabs) || ws.tabs.includes(tab)) return w;
+    return { ...ws, tabs: [...(ws.tabs as unknown[]), tab] };
+  });
+  return { ...s, workspaces };
+}
 
 /** «Основное» gets the backlog tab right after «Канбан» (or at the end without it). */
 function withBacklogTab(w: unknown): unknown {
